@@ -99,3 +99,10 @@ class Game:
         self.date = date
         self.winning_team = winning_team
         self.win_reason = win_reason
+
+
+# ------------------------------------------------------------------------------
+# Validation
+# ------------------------------------------------------------------------------
+def is_valid(games: list[Game], players: list[Player], leg_sessions: list[LegislativeSession], pres_actions: list[PresidentAction]):
+    return True
