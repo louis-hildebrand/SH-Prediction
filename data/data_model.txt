@@ -1,0 +1,47 @@
+Classes
+-------
+Game
+- id: int
+- date: date
+- winning_team: Party
+- win_reason: WinReason
+
+LegislativeSession
+- game_id: int
+- round: int
+- president: string
+- chancellor: string
+- president_get_claim: int?
+- president_give_claim: int?
+- chancellor_get_claim: int?
+- president_get_actual: int?
+- chancellor_get_actual: int?
+- outcome: LegislativeOutcome
+- top_deck: Party?
+- veto_attempt: bool
+- last_round: bool
+
+PresidentAction
+- game_id: int
+- round: int
+- action: PresidentActionType
+- target: Player?  // Only for investigation, election, or shooting
+- num_lib: int?     // Only for peek
+- accuse: bool?    // Only for investigation
+
+Player
+- game_id: int
+- name: string
+- role: Role
+
+Enums
+-----
+Party = Lib | Fas
+
+Role = Lib | Fas | Hit
+
+WinReason = Policy | Hitler | Population | Concede
+
+LegislativeOutcome = Lib | Fas | Rejected | Veto | Hitler
+
+PresidentActionType = Peek | Investigate | Elect | Shoot
