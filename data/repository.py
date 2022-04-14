@@ -2,8 +2,8 @@
 Repository layer to read, write, and delete gameplay data.
 """
 
+from data.models import Player, LegislativeSession, PresidentAction, Game, LegislativeOutcome, Party, PresidentActionType, Role, WinReason
 from datetime import datetime
-from models import Player, LegislativeSession, PresidentAction, Game, LegislativeOutcome, Party, PresidentActionType, Role, WinReason
 from typing import Callable
 
 import config
@@ -51,7 +51,18 @@ def _parse_leg_session(row: list[str]) -> LegislativeSession:
     pres_get_actual = None if not row[9] else int(row[9])
     chan_get_actual = None if not row[10] else int(row[10])
     veto_attempt = bool(row[11])
-    last_round = bool(row[12])
+    if row[11] == "True":
+        veto_attempt = True
+    elif row[11] == "False":
+        veto_attempt = False
+    else:
+        print("WARNING: Invalid value for legislative_session.veto_attempt: '{row[11]}'.")
+    if row[12] == "True":
+        last_round = True
+    elif row[12] == "False":
+        last_round = False
+    else:
+        print("WARNING: Invalid value for legislative_session.veto_attempt: '{row[11]}'.")
     return LegislativeSession(game_id, round_num, pres_name, chan_name, outcome, top_deck, pres_get_claim, pres_give_claim, chan_get_claim, pres_get_actual, chan_get_actual, veto_attempt, last_round)
 
 
@@ -61,7 +72,14 @@ def _parse_pres_action(row: list[str]) -> PresidentAction:
     action = PresidentActionType(row[2])
     target_name = None if not row[3] else row[3]
     num_lib = None if not row[4] else int(row[4])
-    accuse = None if not row[5] else bool(row[5])
+    if row[5] == "True":
+        accuse = True
+    elif row[5] == "False":
+        accuse = False
+    elif row[5] == "":
+        accuse = None
+    else:
+        print(f"WARNING: Invalid value for president_action.accuse: '{row[5]}'.")
     return PresidentAction(game_id, round_num, action, target_name, num_lib, accuse)
 
 
@@ -140,7 +158,7 @@ def get_game_by_id(game_id: int) -> Game:
 # Write queries
 # ------------------------------------------------------------------------------
 def save_game(g: Game) -> None:
-    row = [g.game_id, g.date, g.winning_team, g.win_reason]
+    row = [g.game_id, datetime.strftime(g.date, "%Y-%m-%d"), g.winning_team, g.win_reason]
     _insert(row, config.GAME_FILE_PATH)
 
 
