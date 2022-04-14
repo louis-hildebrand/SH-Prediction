@@ -1,5 +1,5 @@
 """
-Repository layer to read gameplay data.
+Repository layer to read, write, and delete gameplay data.
 """
 
 from datetime import datetime
@@ -8,6 +8,12 @@ from typing import Callable
 
 import config
 import csv
+
+
+GAME_HEADER = ['id', 'date', 'winning_team', 'win_reason']
+PLAYER_HEADER = ['game_id', 'name', 'role']
+LEG_SESSION_HEADER = ['game_id', 'round', 'president', 'chancellor', 'outcome', 'top_deck', 'pres_get_claim', 'pres_give_claim', 'chan_get_claim', 'pres_get_actual', 'chan_get_actual', 'veto_attempt', 'last_round']
+PRES_ACTION_HEADER = ['game_id', 'round', 'action', 'target', 'num_lib', 'accuse']
 
 
 # ------------------------------------------------------------------------------
@@ -67,13 +73,33 @@ def _parse_game(row: list[str]) -> Game:
     return Game(game_id, date, winning_team, win_reason)
 
 
+def _insert(row: list, file: str) -> None:
+    with open(file, "a", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(row)
+
+
 # ------------------------------------------------------------------------------
-# Queries
+# Read queries
 # ------------------------------------------------------------------------------
 _players = None
 _leg_sessions = None
 _pres_actions = None
 _games = None
+
+
+def get_all_pres_actions() -> list[PresidentAction]:
+    global _pres_actions
+    if _pres_actions is None:
+        _pres_actions = _get_all(config.PRES_ACTION_FILE_PATH, _parse_pres_action)
+    return _pres_actions
+
+
+def get_all_leg_sessions() -> list[LegislativeSession]:
+    global _leg_sessions
+    if _leg_sessions is None:
+        _leg_sessions = _get_all(config.LEG_SESSION_FILE_PATH, _parse_leg_session)
+    return _leg_sessions
 
 
 def get_all_players() -> list[Player]:
@@ -93,20 +119,6 @@ def get_player_by_game_and_name(game_id: int, name: str) -> Player:
         raise RuntimeError(f"Multiple players with game ID '{game_id}' and name '{name}' found.")
 
 
-def get_all_leg_sessions() -> list[LegislativeSession]:
-    global _leg_sessions
-    if _leg_sessions is None:
-        _leg_sessions = _get_all(config.LEG_SESSION_FILE_PATH, _parse_leg_session)
-    return _leg_sessions
-
-
-def get_all_pres_actions() -> list[PresidentAction]:
-    global _pres_actions
-    if _pres_actions is None:
-        _pres_actions = _get_all(config.PRES_ACTION_FILE_PATH, _parse_pres_action)
-    return _pres_actions
-
-
 def get_all_games() -> list[Game]:
     global _games
     if _games is None:
@@ -122,3 +134,51 @@ def get_game_by_id(game_id: int) -> Game:
         raise ValueError(f"No game with ID '{game_id}' found.")
     else:
         raise RuntimeError(f"Multiple games with ID '{game_id}' found.")
+
+
+# ------------------------------------------------------------------------------
+# Write queries
+# ------------------------------------------------------------------------------
+def save_game(g: Game) -> None:
+    row = [g.game_id, g.date, g.winning_team, g.win_reason]
+    _insert(row, config.GAME_FILE_PATH)
+
+
+def save_player(p: Player) -> None:
+    row = [p.game_id, p.name, p.role]
+    _insert(row, config.PLAYER_FILE_PATH)
+
+
+def save_leg_session(ls: LegislativeSession) -> None:
+    row = [ls.game_id, ls.round_num, ls.pres_name, ls.chan_name, ls.outcome, ls.top_deck, ls.pres_get_claim,ls.pres_give_claim, ls.chan_get_claim, ls.pres_get_actual, ls.chan_get_actual, ls.veto_attempt, ls.last_round]
+    _insert(row, config.LEG_SESSION_FILE_PATH)
+
+
+def save_pres_action(a: PresidentAction) -> None:
+    row = [a.game_id, a.round_num, a.action, a.target_name, a.num_lib, a.accuse]
+    _insert(row, config.PRES_ACTION_FILE_PATH)
+
+
+# ------------------------------------------------------------------------------
+# Delete queries
+# ------------------------------------------------------------------------------
+def clear_all() -> None:
+    """
+    Clears all files and rewrites their headers.
+    """
+    with open(config.GAME_FILE_PATH, 'w', newline='') as game_file,\
+         open(config.PLAYER_FILE_PATH, 'w', newline='') as player_file,\
+         open(config.LEG_SESSION_FILE_PATH, 'w', newline='') as leg_session_file,\
+         open(config.PRES_ACTION_FILE_PATH, 'w', newline='') as pres_action_file:
+        # President action
+        pres_action_writer = csv.writer(pres_action_file)
+        pres_action_writer.writerow(PRES_ACTION_HEADER)
+        # Legislative session
+        leg_session_writer = csv.writer(leg_session_file)
+        leg_session_writer.writerow(LEG_SESSION_HEADER)
+        # Player
+        player_writer = csv.writer(player_file)
+        player_writer.writerow(PLAYER_HEADER)
+        # Game
+        game_writer = csv.writer(game_file)
+        game_writer.writerow(GAME_HEADER)
