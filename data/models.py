@@ -105,4 +105,5 @@ class Game:
 # Validation
 # ------------------------------------------------------------------------------
 def is_valid(games: list[Game], players: list[Player], leg_sessions: list[LegislativeSession], pres_actions: list[PresidentAction]):
+    # TODO: Implement validation
     return True
