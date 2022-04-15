@@ -2,4 +2,3 @@ __pycache__
 .venv
 *.xlsx
 !data/example.xlsx
-data/data/
