@@ -2,8 +2,8 @@
 Global constants.
 """
 
-# Spreadsheet from which to import
-DEFAULT_IMPORT_FILE = "data/example.xlsx"
+# Default spreadsheet names
+WORKBOOK_NAME = "data/example.xlsx"
 WORKSHEET_NAME = "Data"
 
 # Spreadsheet format
