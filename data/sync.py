@@ -7,15 +7,11 @@ import config
 import data.repository as repo
 
 
-HEADER_ROW = ["game", "round", "president", "chancellor", "outcome", "top_deck", "pres_get", "pres_give", "chan_get", "veto_attempt", "last_round", "pres_action", "target", "num_lib", "accuse", None, "player", "role", None, "winning_team", "win_reason", None, "pres_get_actual", "chan_get_actual"]
-NUM_COLS = len(HEADER_ROW)
-
-
 def _read_spreadsheet(file: str) -> list[list]:
     workbook = load_workbook(filename=file, data_only=True)
     worksheet = workbook[config.WORKSHEET_NAME]
-    if worksheet.max_column != NUM_COLS:
-        raise ValueError(f"Wrong number of columns in spreadsheet. Expected {NUM_COLS} but received {worksheet.max_column}.")
+    if worksheet.max_column != config.SPREADSHEET_NUM_COLS:
+        raise ValueError(f"Wrong number of columns in spreadsheet. Expected {config.SPREADSHEET_NUM_COLS} but received {worksheet.max_column}.")
     data = []
     for row in range(1, worksheet.max_row + 1):
         row_data = [worksheet.cell(row=row, column=col).value for col in range(1, worksheet.max_column + 1)]
@@ -42,7 +38,12 @@ def _is_date_row(row: list[str]) -> bool:
 
 
 def _is_header_row(row: list[str]) -> bool:
-    return row == HEADER_ROW
+    return row == config.SPREADSHEET_HEADER
+
+
+def _get_value(row: list, column: str):
+    index = config.SPREADSHEET_HEADER.index(column)
+    return row[index]
 
 
 def _parse_data(data: list[list]) -> tuple[list[Game], list[Player], list[LegislativeSession], list[PresidentAction]]:
@@ -61,37 +62,39 @@ def _parse_data(data: list[list]) -> tuple[list[Game], list[Player], list[Legisl
         else:
             # Save the new game
             if new_game:
-                game_id = row[0]
-                winning_team = Party(row[19])
-                win_reason = WinReason(row[20])
+                game_id = _get_value(row, "game")
+                winning_team = Party(_get_value(row, "winning_team"))
+                win_reason = WinReason(_get_value(row, "win_reason"))
                 games.append(Game(game_id, current_date, winning_team, win_reason))
                 new_game = False
             # Add player if present
-            if row[16] is not None or row[17] is not None:
-                name = row[16]
-                role = Role(row[17])
-                players.append(Player(game_id, name, role))
+            player_name = _get_value(row, "player")
+            player_role = _get_value(row, "role")
+            if player_name is not None or player_role is not None:
+                players.append(Player(game_id, player_name, Role(player_role)))
             # Add legislative session if present
-            if row[1] is not None:
-                round_num = int(row[1])
-                pres_name = row[2]
-                chan_name = row[3]
-                outcome = LegislativeOutcome(row[4])
-                top_deck = None if row[5] is None else Party(row[5])
-                pres_get_claim = row[6]
-                pres_give_claim = row[7]
-                chan_get_claim = row[8]
-                veto_attempt = row[9]
-                last_round = row[10]
-                pres_get_actual = row[22]
-                chan_get_actual = row[23]
+            round_num = _get_value(row, "round")
+            if round_num is not None:
+                pres_name = _get_value(row, "president")
+                chan_name = _get_value(row, "chancellor")
+                outcome = LegislativeOutcome(_get_value(row, "outcome"))
+                top_deck_raw = _get_value(row, "top_deck")
+                top_deck = None if top_deck_raw is None else Party(top_deck_raw)
+                pres_get_claim = _get_value(row, "pres_get")
+                pres_give_claim = _get_value(row, "pres_give")
+                chan_get_claim = _get_value(row, "chan_get")
+                veto_attempt = _get_value(row, "veto_attempt")
+                last_round = _get_value(row, "last_round")
+                pres_get_actual = _get_value(row, "pres_get_actual")
+                chan_get_actual = _get_value(row, "chan_get_actual")
                 leg_sessions.append(LegislativeSession(game_id, round_num, pres_name, chan_name, outcome, top_deck, pres_get_claim, pres_give_claim, chan_get_claim, pres_get_actual, chan_get_actual, veto_attempt, last_round))
                 # Add president action if present
-                if row[11] is not None:
-                    action = PresidentActionType(row[11])
-                    target_name = row[12]
-                    num_lib = row[13]
-                    accuse = row[14]
+                pres_action = _get_value(row, "pres_action")
+                if pres_action is not None:
+                    action = PresidentActionType(pres_action)
+                    target_name = _get_value(row, "target")
+                    num_lib = _get_value(row, "num_lib")
+                    accuse = _get_value(row, "accuse")
                     pres_actions.append(PresidentAction(game_id, round_num, action, target_name, num_lib, accuse))
     return games, players, leg_sessions, pres_actions
 
@@ -103,12 +106,16 @@ def main(args: Namespace) -> None:
     games, players, leg_sessions, pres_actions = _parse_data(data)
     if is_valid(games, players, leg_sessions, pres_actions):
         repo.clear_all()
+        print(f"Saving {len(games)} games.")
         for g in games:
             repo.save_game(g)
+        print(f"Saving {len(players)} players.")
         for p in players:
             repo.save_player(p)
+        print(f"Saving {len(leg_sessions)} legislative sessions.")
         for ls in leg_sessions:
             repo.save_leg_session(ls)
+        print(f"Saving {len(pres_actions)} president actions.")
         for a in pres_actions:
             repo.save_pres_action(a)
     print("Import complete.")
