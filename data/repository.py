@@ -180,23 +180,47 @@ def save_pres_action(a: PresidentAction) -> None:
 # ------------------------------------------------------------------------------
 # Delete queries
 # ------------------------------------------------------------------------------
+def clear_pres_actions() -> None:
+    """
+    Clears all president actions and rewrites the file header.
+    """
+    with open(config.PRES_ACTION_FILE_PATH, 'w', newline='') as pres_action_file:
+        pres_action_writer = csv.writer(pres_action_file)
+        pres_action_writer.writerow(PRES_ACTION_HEADER)
+
+
+def clear_leg_sessions() -> None:
+    """
+    Clears all legislative sessions and rewrites the file header.
+    """
+    with open(config.LEG_SESSION_FILE_PATH, 'w', newline='') as leg_session_file:
+        leg_session_writer = csv.writer(leg_session_file)
+        leg_session_writer.writerow(LEG_SESSION_HEADER)
+
+
+def clear_players() -> None:
+    """
+    Clears all players and rewrites the file header.
+    """
+    with open(config.PLAYER_FILE_PATH, 'w', newline='') as player_file:
+        player_writer = csv.writer(player_file)
+        player_writer.writerow(PLAYER_HEADER)
+
+
+def clear_games() -> None:
+    """
+    Clears all games and rewrites the file header.
+    """
+    with open(config.GAME_FILE_PATH, 'w', newline='') as game_file:
+        game_writer = csv.writer(game_file)
+        game_writer.writerow(GAME_HEADER)
+
+
 def clear_all() -> None:
     """
     Clears all files and rewrites their headers.
     """
-    with open(config.GAME_FILE_PATH, 'w', newline='') as game_file,\
-         open(config.PLAYER_FILE_PATH, 'w', newline='') as player_file,\
-         open(config.LEG_SESSION_FILE_PATH, 'w', newline='') as leg_session_file,\
-         open(config.PRES_ACTION_FILE_PATH, 'w', newline='') as pres_action_file:
-        # President action
-        pres_action_writer = csv.writer(pres_action_file)
-        pres_action_writer.writerow(PRES_ACTION_HEADER)
-        # Legislative session
-        leg_session_writer = csv.writer(leg_session_file)
-        leg_session_writer.writerow(LEG_SESSION_HEADER)
-        # Player
-        player_writer = csv.writer(player_file)
-        player_writer.writerow(PLAYER_HEADER)
-        # Game
-        game_writer = csv.writer(game_file)
-        game_writer.writerow(GAME_HEADER)
+    clear_pres_actions()
+    clear_leg_sessions()
+    clear_players()
+    clear_games()
