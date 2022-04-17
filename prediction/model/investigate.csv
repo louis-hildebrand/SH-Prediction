@@ -1,0 +1,17 @@
+president,target,accuse,probability
+Fas,Fas,False,0.9
+Fas,Fas,True,0.1
+Fas,Hit,False,0.99
+Fas,Hit,True,0.01
+Fas,Lib,False,0.6
+Fas,Lib,True,0.4
+Hit,Fas,False,0.92
+Hit,Fas,True,0.08
+Hit,Lib,False,0.96
+Hit,Lib,True,0.04
+Lib,Fas,False,0
+Lib,Fas,True,1
+Lib,Hit,False,0
+Lib,Hit,True,1
+Lib,Lib,False,1
+Lib,Lib,True,0

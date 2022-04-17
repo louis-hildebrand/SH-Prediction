@@ -1,7 +1,7 @@
 from data import sync
 from data.data.archive import sync as sync_archive, migrate as migrate_archive
 from data.data.randomize_names import make_mapping, apply_mapping
-from predict import predict
+from prediction import predict
 
 import argparse
 import config
