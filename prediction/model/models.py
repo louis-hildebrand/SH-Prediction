@@ -1,4 +1,4 @@
-from data.models import LegislativeOutcome, Role
+from data.models import LegislativeOutcome, LegislativeSession, PresidentAction, PresidentActionType, Role
 from functools import cache
 from prediction.game_context import GameContext
 
@@ -163,15 +163,17 @@ def _get_leg_session_table() -> pd.DataFrame:
     return df
 
 
-def prob_legislative_session(pres: Role, chan: Role, outcome: LegislativeOutcome, pres_get_claim: int, pres_give_claim: int, chan_get_claim: int, context: GameContext) -> float:
+def prob_legislative_session(ls: LegislativeSession, role: dict[str, Role], context: GameContext) -> float:
+    pres_role = role[ls.pres_name]
+    chan_role = role[ls.chan_name]
     # Get the relevant rows from the probability model table
     def matching_row(row: pd.Series) -> bool:
-        return (row.president == str(pres) and
-            row.chancellor == str(chan) and
-            row.outcome == str(outcome) and
-            row.pres_get_claim == pres_get_claim and
-            row.pres_give_claim == pres_give_claim and
-            row.chan_get_claim == chan_get_claim)
+        return (row.president == str(pres_role) and
+            row.chancellor == str(chan_role) and
+            row.outcome == str(ls.outcome) and
+            row.pres_get_claim == ls.pres_get_claim and
+            row.pres_give_claim == ls.pres_give_claim and
+            row.chan_get_claim == ls.chan_get_claim)
     ls_table = _get_leg_session_table()
     ls_table = ls_table[ls_table.apply(matching_row, axis=1)]
     if len(ls_table) == 0:
@@ -180,6 +182,22 @@ def prob_legislative_session(pres: Role, chan: Role, outcome: LegislativeOutcome
     param = _get_leg_session_parameters(context)
     ls_table = _eval_table(ls_table, param)
     return sum(ls_table["probability"])
+
+
+# ------------------------------------------------------------------------------
+# Any president action
+# ------------------------------------------------------------------------------
+def prob_president_action(action: PresidentAction, pres_name: str, role: dict[str, Role], context: GameContext) -> float:
+    if action.action == PresidentActionType.PEEK:
+        pres_role = role[pres_name]
+        return _prob_peek(pres_role, action.num_lib, context)
+    elif action.action == PresidentActionType.INVESTIGATE:
+        pres_role = role[pres_name]
+        target_role = role[action.target_name]
+        return _prob_investigate(pres_role, target_role, action.accuse)
+    else:
+        # TODO: Implement models for selecting the next president and shooting
+        return 1
 
 
 # ------------------------------------------------------------------------------
@@ -198,7 +216,7 @@ def _get_peek_table() -> pd.DataFrame:
     return df
 
 
-def prob_peek(pres: Role, num_lib: int, context: GameContext) -> float:
+def _prob_peek(pres: Role, num_lib: int, context: GameContext) -> float:
     # Load the model and find the relevant rows
     peek_table = _get_peek_table()
     matching_row = lambda x: x["president"] == str(pres) and x["pres_get_claim"] == num_lib
@@ -217,7 +235,7 @@ def _get_investigation_table() -> pd.DataFrame:
     return pd.read_csv(INVESTIGATE_FILE)
 
 
-def prob_investigate(pres: Role, target: Role, accuse: bool) -> float:
+def _prob_investigate(pres: Role, target: Role, accuse: bool) -> float:
     inv_table = _get_investigation_table()
     matching_row = lambda x: x["president"] == str(pres) and x["target"] == str(target) and x["accuse"] == accuse
     inv_table = inv_table[inv_table.apply(matching_row, axis=1)]
@@ -234,13 +252,3 @@ def prob_investigate(pres: Role, target: Role, accuse: bool) -> float:
 # Shoot
 # ------------------------------------------------------------------------------
 # TODO
-
-
-def main():
-    context = GameContext(9)
-    p = prob_legislative_session(Role.FAS, Role.FAS, LegislativeOutcome.FAS, 0, 0, 0, context)
-    print(p)
-    p2 = prob_peek(Role.LIB, 0, context)
-    print(p2)
-    p3 = prob_investigate(Role.FAS, Role.FAS, False)
-    print(p3)
