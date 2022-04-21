@@ -28,6 +28,8 @@ def _eval_table(df: pd.DataFrame, param: dict[str, float]) -> pd.DataFrame:
 def _prob_pres_get_actual(n: int, num_lib: dict[int, float], tot_cards: int) -> float:
     prob = 0
     for (nlib, p) in num_lib.items():
+        if nlib > tot_cards:
+            break
         nfas = tot_cards - nlib
         prob += p * math.comb(nlib, n) * math.comb(nfas, 3 - n) / math.comb(tot_cards, 3)
     return prob
@@ -163,9 +165,28 @@ def _get_leg_session_table() -> pd.DataFrame:
     return df
 
 
+def _prob_nlib_remaining(n: int, ls_table: pd.DataFrame, old_draw_pile: dict[int, float]) -> float:
+    # The probability that there are n liberal policies remaining in the draw pile is
+    #   P(n before, 0 used) + P(n + 1 before, 1 used) + P(n + 2 before, 2 used) + P(n + 3 before, 3 used)
+    prob = 0
+    for k in range(4):
+        if n + k > 6:
+            break
+        prob_tot = sum(ls_table["probability"])
+        prob_k_used = sum(ls_table.where(ls_table["pres_get_actual"] == k, 0)["probability"]) / prob_tot
+        prob += old_draw_pile[n + k] * prob_k_used
+    return prob
+
+
 def prob_legislative_session(ls: LegislativeSession, role: dict[str, Role], context: GameContext) -> float:
+    """
+    Calculates the probability of the given legislative session given the specifed roles. Also updates the state of the draw pile.
+    """
     pres_role = role[ls.pres_name]
     chan_role = role[ls.chan_name]
+    # In Hitler Zone, if the chancellor was Hitler, the game would have been over
+    if context.fas_passed >= 3 and chan_role == Role.HIT:
+        return 0
     # Get the relevant rows from the probability model table
     def matching_row(row: pd.Series) -> bool:
         return (row.president == str(pres_role) and
@@ -181,7 +202,12 @@ def prob_legislative_session(ls: LegislativeSession, role: dict[str, Role], cont
     # Calculate the probabilities for this round
     param = _get_leg_session_parameters(context)
     ls_table = _eval_table(ls_table, param)
-    return sum(ls_table["probability"])
+    prob = sum(ls_table["probability"])
+    # Update the probabilities for the deck
+    old_draw_pile = context.draw_pile_num_lib.copy()
+    for n in range(7):
+        context.draw_pile_num_lib[n] = _prob_nlib_remaining(n, ls_table, old_draw_pile)
+    return prob
 
 
 # ------------------------------------------------------------------------------
@@ -195,6 +221,9 @@ def prob_president_action(action: PresidentAction, pres_name: str, role: dict[st
         pres_role = role[pres_name]
         target_role = role[action.target_name]
         return _prob_investigate(pres_role, target_role, action.accuse)
+    elif action.action == PresidentActionType.SHOOT and role[action.target_name] == Role.HIT:
+        # If the target was Hitler, the game would have been over
+        return 0
     else:
         # TODO: Implement models for selecting the next president and shooting
         return 1
