@@ -3,8 +3,16 @@ from data.models import Game, LegislativeSession, Player, PresidentAction, Legis
 from prediction.game_context import GameContext
 
 import data.repository as re
+import matplotlib.pyplot as plt
 import pandas as pd
 import prediction.model.models as pmodel
+
+
+# Chart colours
+rgb = lambda r, g, b: (r/255, g/255, b/255)
+FAS_COLOUR = rgb(255, 124, 36)  # "chocolate1"
+HIT_COLOUR = rgb(208, 4, 4)  # "red3"
+LIB_COLOUR = rgb(136, 204, 252)  # "skyblue1"
 
 
 def _max_round(leg_sessions: list[LegislativeSession]) -> int:
@@ -22,7 +30,6 @@ def _max_round(leg_sessions: list[LegislativeSession]) -> int:
                 return ls.round_num
     # No last round found: all rounds can be used in prediction
     return leg_sessions[-1].round_num
-
 
 
 def _get_game(game_id: int, round_num: int) -> tuple[Game, list[Player], list[LegislativeSession], list[PresidentAction]]:
@@ -144,6 +151,20 @@ def _get_fascist_names(role_assignment: dict[str, Role]) -> str:
     return [name for (name, role) in role_assignment.items() if role == Role.FAS]
 
 
+def _plot_individual_probabilities(ind_prob: pd.DataFrame) -> None:
+    labels = ind_prob.keys()
+    prob_fas = [x[0] for x in ind_prob.values()]
+    prob_hit = [x[1] for x in ind_prob.values()]
+    prob_lib = [x[2] for x in ind_prob.values()]
+
+    _, ax = plt.subplots()
+    ax.bar(labels, prob_fas, label="Fas", color=FAS_COLOUR)
+    ax.bar(labels, prob_hit, bottom = prob_fas, label="Hit", color=HIT_COLOUR)
+    ax.bar(labels, prob_lib, bottom = [pf + ph for (pf, ph) in zip(prob_fas, prob_hit)], label="Lib", color=LIB_COLOUR)
+
+    plt.show()
+
+
 def main(args: Namespace) -> None:
     game, players, leg_sessions, pres_actions = _get_game(args.game, args.round)
     max_round = max([ls.round_num for ls in leg_sessions])
@@ -183,3 +204,4 @@ def main(args: Namespace) -> None:
                 ind_prob[2] += prob
         individual_probabilities[name] = ind_prob
     print(pd.DataFrame(individual_probabilities, index=["Fas", "Hit", "Lib"]))
+    _plot_individual_probabilities(individual_probabilities)
