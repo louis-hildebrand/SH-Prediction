@@ -1,4 +1,4 @@
-president,chancellor,pres_get_actual,chan_get_actual,probability
+president,chancellor,pres_get_actual,chan_get_actual,probability_pp
 Fas,Fas,0,0,1
 Fas,Fas,1,0,PP_FF1_FORCE_FAS
 Fas,Fas,1,1,1-PP_FF1_FORCE_FAS

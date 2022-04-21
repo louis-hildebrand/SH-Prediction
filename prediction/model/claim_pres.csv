@@ -1,4 +1,4 @@
-president,chancellor,pres_get_actual,chan_get_actual,outcome,pres_get_claim,pres_give_claim,probability
+president,chancellor,pres_get_actual,chan_get_actual,outcome,pres_get_claim,pres_give_claim,probability_cp
 Fas,Fas,0,0,Fas,0,0,1 - CP_FXF_SUICIDE - CP_FFF_ACCUSE
 Fas,Fas,0,0,Fas,1,0,CP_FXF_SUICIDE
 Fas,Fas,0,0,Fas,1,1,CP_FFF_ACCUSE * (1 - CP_FXX_OVERREPORT)
