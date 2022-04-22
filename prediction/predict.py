@@ -5,7 +5,7 @@ from prediction.game_context import GameContext
 import data.repository as re
 import matplotlib.pyplot as plt
 import pandas as pd
-import prediction.model.models as pmodel
+import prediction.model.pmodel as pmodel
 
 
 # Chart colours
