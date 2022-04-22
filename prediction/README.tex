@@ -151,5 +151,34 @@ For the decision to accuse or not accuse, assume that:
 
 \newpage
 \subsection{Policy Peek}
+Let $R_p$ be the role of the President, let $A$ be the actual number of Liberal policies observed by the President, and let $M$ be the number of Liberal policies reported by the President. Given a President identity $r_p$ and a reported number of Liberal policies $m$, we want to find the probability of that outcome and update the state of the draw pile. Let $\Gamma$ be the event that $R_p=r_p$.
+
+\subsubsection{Policy Peek Outcome}
+\begin{equation*}
+	P(M=m \mid \Gamma) = \sum_{x=0}^6 P(M=m \cap X_j=x \mid \Gamma) 
+\end{equation*}
+
+where
+\begin{align*}
+	P(M=m \cap X_j=x \mid \Gamma)
+		&= P(X_j=x \mid \Gamma) P(M=m \mid X_j=x \cap \Gamma) \\
+		&= P(X_j=x) P(M=m \mid X_j=x \cap \Gamma)
+\end{align*}
+
+and
+\begin{align*}
+	& P(M=m \mid X_j=x \cap \Gamma) \\
+	={}& \sum_{a=0}^3 P(M=m \cap A=a \mid X_j=x \cap \Gamma) \\
+	={}& \sum_{a=0}^3 P(A=a \mid X_j=x \cap \Gamma) P(M=m \mid A=a \cap X_j=x \cap \Gamma) \\
+	={}& \sum_{a=0}^3 P(A=a \mid X_j=x) P(M=m \mid A=a \cap \Gamma) \\
+	={}& \sum_{a=0}^3 \frac{\binom{x}{a} \binom{n_j-x}{3-a}}{\binom{n_j}{3}} P(M=m \mid A=a \cap \Gamma)
+\end{align*}
+
+\subsubsection{Draw Pile}
+\begin{align*}
+	P(X_{j+1}=x \mid M=m \cap \Gamma)
+		&= P(X_j=x \mid M=m \cap \Gamma) \\
+		&= \frac{P(M=m \cap X_j=x \mid \Gamma)}{P(M=m \mid \Gamma)}
+\end{align*}
 
 \end{document}
