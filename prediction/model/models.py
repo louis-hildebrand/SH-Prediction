@@ -37,25 +37,6 @@ def _prob_pres_get_actual(n: int, num_drawn: int, draw_pile: dict[int, float], t
     return prob
 
 
-@cache
-def _get_deck_model() -> pd.DataFrame:
-    data = {
-        "pres_get_actual" : [0, 1, 2, 3],
-        "probability_pga" : ["PGA_0", "PGA_1", "PGA_2", "PGA_3"]
-    }
-    return pd.DataFrame(data)
-
-
-def _get_deck_parameters(context: GameContext) -> dict[str, float]:
-    # TODO: Delete this?
-    param = {}
-    param["PGA_0"] = _prob_pres_get_actual(0, 3, context.draw_pile, context.draw_pile_size)
-    param["PGA_1"] = _prob_pres_get_actual(1, 3, context.draw_pile, context.draw_pile_size)
-    param["PGA_2"] = _prob_pres_get_actual(2, 3, context.draw_pile, context.draw_pile_size)
-    param["PGA_3"] = _prob_pres_get_actual(3, 3, context.draw_pile, context.draw_pile_size)
-    return param
-
-
 # ------------------------------------------------------------------------------
 # Legislative session
 # ------------------------------------------------------------------------------
@@ -64,8 +45,7 @@ def _get_leg_session_parameters(context: GameContext) -> dict[str, float]:
     EXTREMELY_UNLIKELY = 0.005
     VERY_UNLIKELY = 0.01
     UNLIKELY = 0.05
-    # Deck
-    param = _get_deck_parameters(context)
+    param = {}
     # Policy: president
     param["PP_FF1_FORCE_FAS"] = 0.75
     param["PP_FF2_TEST"] = 0.9
@@ -196,26 +176,46 @@ def _prob_legislative_session(ls: LegislativeSession, pres_get_actual: int, role
 # ------------------------------------------------------------------------------
 @cache
 def _get_peek_table() -> pd.DataFrame:
-    peek_table = pd.read_csv(PEEK_FILE)
-    deck_table = _get_deck_model()
-    df = pd.merge(peek_table, deck_table, how="inner", on="pres_get_actual")
-    # Multiply probabilities
-    # Add parentheses around each column just in case the file is changed later
-    df["probability_pk"] = "(" + df["probability_pk"].astype(str) + ")"
-    df["probability_pga"] = "(" + df["probability_pga"] + ")"
-    df["prob_str"] = df["probability_pk"].str.cat(df["probability_pga"], sep="*")
-    return df
+    return pd.read_csv(PEEK_FILE)
 
 
-def _prob_peek(pres: Role, num_lib: int, context: GameContext) -> float:
+def _prob_peek_given_pga(pres: Role, pres_get_actual: int, pres_get_claim: int) -> float:
     # Load the model and find the relevant rows
     peek_table = _get_peek_table()
-    matching_row = lambda x: x["president"] == str(pres) and x["pres_get_claim"] == num_lib
+    def matching_row(row: pd.Series) -> bool:
+        return (row["president"] == str(pres) and
+            row["pres_get_actual"] == pres_get_actual and
+            row["pres_get_claim"] == pres_get_claim)
     peek_table = peek_table[peek_table.apply(matching_row, axis=1)]
-    # Calculate the probabilities for this round
-    param = _get_deck_parameters(context)
-    peek_table = _eval_table(peek_table, param)
-    return sum(peek_table["probability"])
+    return peek_table.iloc[0]["probability"]
+
+
+def _peek(pres: Role, pres_get_claim: int, context: GameContext) -> float:
+    # Find probability of the peek given each possible actual observation
+    prob_peek_given_pga = {}
+    for a in range(4):
+        prob_peek_given_pga[a] = _prob_peek_given_pga(pres, a, pres_get_claim)
+    # Find the probability of the peek given each possible number of Liberal policies in the entire draw pile
+    prob_peek_given_deck = {}
+    n = context.draw_pile_size
+    for x in range(min(7, n + 1)):
+        prob_peek_given_deck[x] = 0
+        for a in range(4):
+            binom_coeff = math.comb(x, a) * math.comb(n - x, 3 - a) / math.comb(n, 3)
+            prob_peek_given_deck[x] += binom_coeff * prob_peek_given_pga[a]
+    # Find the probability of the peek AND each possible number of Liberal policies in the entire draw pile
+    prob_peek_and_deck = {}
+    for x in range(min(7, n + 1)):
+        prob_peek_and_deck[x] = context.draw_pile[x] * prob_peek_given_deck[x]
+    # Calculate final result and update state of the draw pile
+    prob_peek = sum([p for p in prob_peek_and_deck.keys()])
+    for x in range(7):
+        # Explicitly handle x being out of range to avoid KeyErrors
+        if x <= n:
+            context.draw_pile[x] = prob_peek_and_deck[x] / prob_peek
+        else:
+            context.draw_pile[x] = 0
+    return prob_peek
 
 
 # ------------------------------------------------------------------------------
@@ -270,7 +270,7 @@ def _prob_investigate(pres: Role, target: Role, accuse: bool, context: GameConte
 def _prob_president_action(action: PresidentAction, pres_name: str, role: dict[str, Role], context: GameContext) -> float:
     if action.action == PresidentActionType.PEEK:
         pres_role = role[pres_name]
-        return _prob_peek(pres_role, action.num_lib, context)
+        return _peek(pres_role, action.num_lib, context)
     elif action.action == PresidentActionType.INVESTIGATE:
         pres_role = role[pres_name]
         target_role = role[action.target_name]

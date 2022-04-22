@@ -1,4 +1,4 @@
-president,pres_get_actual,pres_get_claim,probability_pk
+president,pres_get_actual,pres_get_claim,probability
 Fas,0,0,0.8
 Fas,0,1,0.1
 Fas,0,2,0.08
