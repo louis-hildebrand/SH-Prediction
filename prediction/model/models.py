@@ -282,7 +282,6 @@ def _legislative_session(ls: LegislativeSession, role: dict[str, float], context
     prob_ls_given_pga = {}
     for pres_get_actual in range(4):
         prob_ls_given_pga[pres_get_actual] = _prob_legislative_session(ls, pres_get_actual, role, context)
-    print(prob_ls_given_pga)
     prob_pga = lambda a: _prob_pres_get_actual(a, 3, context.draw_pile, context.draw_pile_size)
     prob_ls = sum([p*prob_pga(a) for a, p in prob_ls_given_pga.items()])
     # Return immediately to avoid division by zero
