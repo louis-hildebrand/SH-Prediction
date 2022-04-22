@@ -1,4 +1,11 @@
+# Python
 __pycache__
 .venv
+
+# Spreadsheets
 *.xlsx
 !data/example.xlsx
+
+# LaTeX
+*.aux
+*.log

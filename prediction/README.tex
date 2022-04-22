@@ -1,0 +1,105 @@
+\documentclass[fleqn, 12pt, letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[letterpaper, margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+% Paragraph indentation and spacing
+\usepackage[parfill]{parskip}
+% Upright (non-italicized) subscripts
+\newcommand{\up}[1]{\textnormal{#1}}
+% Footnote symbols
+\renewcommand\thefootnote{\fnsymbol{footnote}}
+
+\title{Secret Hitler Prediction Algorithm}
+\author{Louis Hildebrand}
+\date{2022/04/15}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+Consider the list of all possible assignments of roles (Liberal, Fascist, or Hitler) to players. Let $R_i$ be the event that the $i$th role assignment in that list represents the actual role of each player. Furthermore, let $G$ be the event that some game's history (i.e. all legislative sessions, president actions, top-decks, etc.) exactly matches the current game.
+
+We want to find $P(R_i \mid G)$ for all $i$. By Bayes' theorem,
+\begin{align*}
+	P(R_i \mid G)
+		&= \frac{P(G \mid R_i) P(R_i)}{P(G)} \\
+		&= \frac{P(G \mid R_i) P(R_i)}{\sum_j P(G \cap R_j)} \\
+		&= \frac{P(G \mid R_i) P(R_i)}{\sum_j P(G \mid R_j) P(R_j)}
+\end{align*}
+Assuming each assignment of roles is equally likely:
+\begin{align*}
+	P(R_i \mid G)
+		&= \frac{P(G \mid R_i) P(R_i)}{\sum_j P(G \mid R_j) P(R_i)} \\
+		&= \frac{P(G \mid R_i)}{\sum_j P(G \mid R_j)}
+\end{align*}
+So we just need to find the probability of the game happening the way it did given each possible assignment of roles.
+
+For simplicity, assume the probability of each legislative session, president action, etc. depends only on the current state of the draw pile (i.e. players' decisions are independent of decisions from previous rounds). Let $X_j$ be a random variable corresponding to the number of Liberal policies remaining in the draw pile at the start of the $j$th round. Let $n_j$ be the total number of policies in the draw pile at the start of the $j$th round. At the beginning of the game, $X_1 = 6$ with a probability of 1 and $n_1 = 17$.
+
+\section{Legislative Sessions}
+\subsection{Definitions}
+Given an assignment of roles, the roles of the President and the Chancellor are known. A legislative session's visible outcome includes four pieces of information: the policy outcome (Liberal or Fascist), the policies that the President claims to have received, the policies that the President claims to have given to the Chancellor, and the policies that the Chancellor claims to have received. There are also two pieces of hidden information: the actual policies received by the President and by the Chancellor. Let:
+\begin{itemize}
+	\item $R_p$ be 0 if the President is Fascist, 1 if they are Hitler, and 2 if they are Liberal
+	\item $R_c$ be 0 if the Chancellor is Fascist, 1 if they are Hitler, and 2 if they are Liberal
+	\item $Y$ be 0 if a Fascist policy is passed and 1 if a Liberal policy is passed
+	\item $M_1$ be the number of Liberal policies that the President claims to have received
+	\item $M_2$ be the number of Liberal policies that the President claims to have given to the Chancellor
+	\item $M_3$ be the number of Liberal policies that the Chancellor claims to have received
+	\item $A_1$ be the actual number of Liberal policies received by the President
+	\item $A_2$ be the actual number of Liberal policies received by the Chancellor
+\end{itemize}
+
+\subsection{Session Outcome}
+Given roles $r_p$ and $r_c$, a policy outcome $y$, and claims $m_1$, $m_2$, and $m_3$, we want to calculate $p = P(Y=y \cap M_1=m_1 \cap M_2=m_2 \cap M_3=m_3 \mid R_p=r_p \cap R_c=r_c)$. Let $\Gamma$ be the event that $R_p=r_p \cap R_c=r_c$ and let $L$ be the event that $Y=y \cap M_1=m_1 \cap M_2=m_2 \cap M_3=m_3$. Assume that the state of the draw pile at the start of each legislative session is independent of the players who will be President and Chancellor.
+
+Then
+\begin{align*}
+	P(L \mid \Gamma)
+		&= \sum_{a_1=0}^3 P(L \cap A_1=a_1 \mid \Gamma) \\
+		&= \sum_{a_1=0}^3 P(L \mid A_1=a_1 \cap \Gamma) P(A_1=a_1 \mid \Gamma) \\
+		&= \sum_{a_1=0}^3 P(L \mid A_1=a_1 \cap \Gamma) P(A_1=a_1) \\
+		&= \sum_{a_1=0}^3 P(L \mid A_1=a_1 \cap \Gamma) \sum_{x=0}^6 P(A_1=a_1 \cap X_j=x) \\
+		&= \sum_{a_1=0}^3 P(L \mid A_1=a_1 \cap \Gamma) \sum_{x=0}^6 P(X_j=x) P(A_1=a_1 \mid X_j=x) \\
+		&= \sum_{a_1=0}^3 P(L \mid A_1=a_1 \cap \Gamma) \sum_{x=0}^6 P(X_j=x) \frac{\binom{x}{a_1} \binom{n_j-x}{3-a_1}}{\binom{n_j}{3}}
+\end{align*}
+
+Furthermore,
+\begin{align*}
+	P(L \mid A_1=a_1 \cap \Gamma)
+		&= \sum_{a_2=0}^2 P(L \cap A_2=a_2 \mid A_1=a_1 \cap \Gamma) \\
+		&= \sum_{a_2=0}^2 p_\up{pp} \cdot p_\up{pc} \cdot p_\up{cp} \cdot p_\up{cc}
+\end{align*}
+where
+\begin{itemize}
+	\item $p_\up{pp} = P(A_2=a_2 \mid A_1=a_1 \cap \Gamma)$
+	\item $p_\up{pc} = P(Y=y \mid A_2=a_2 \cap A_1=a_1 \cap \Gamma)$
+	\item $p_\up{cp} = P(M_1=m_1 \cap M_2=m_2 \mid Y=y \cap A_2=a_2 \cap A_1=a_1 \cap \Gamma)$
+	\item $p_\up{cc} = P(M_3=m_3 \mid M_1=m_1 \cap M_2=m_2 \cap Y=y \cap A_2=a_2 \cap A_1=a_1 \cap \Gamma)$
+\end{itemize}
+
+In short, if the actual policies received by the President are known, the probability of a legislative session can be expressed in terms of independent decisions by the President and the Chancellor. $p_\up{pp}$ represents the policy decision made by the President (i.e. which policy to discard), $p_\up{pc}$ represents the Chancellor's policy decision, $p_\up{cp}$ represents the President's claims, and $p_\up{cc}$ represents the Chancellor's claim. These can all be estimated based on assumptions about players' likely strategies. To find the probability regardless of the actual policies received by the President, sum over all possible agendas.
+
+\subsection{Draw Pile}
+After each legislative session, we want to update the state of the draw pile. That is, we want to determine the PMF of $X_{j+1}$. If there are fewer than 3 policies remaining in the draw pile, all cards are placed back into the draw pile. Then $n_{j+1} = 17 - \#Liberal policies passed - \#Fascist policies passed$ and $X_{j+1} = 6 - \#Liberal policies passed$ with a probability of 1. Otherwise, $n_{j+1} = n_j - 3$ and the PMF of $X_{j+1}$ can be calculated based on the legislative session outcome and the player roles. As before, assume that the state of the draw pile is independent of the upcoming President and Chancellor. Furthermore, assume that the number of Liberal policies in the draw pile is not relevant to the legislative session except in determining the policies received by the President (i.e. we can ignore $X$ once we know $A_1$).
+\begin{align*}
+	& P(X_{j+1}=x \mid L \cap \Gamma) \\
+	={}& \sum_{a_1=0}^3 P(X_j=x+a_1 \cap A_1=a_1 \mid L \cap \Gamma) \\
+	={}& \sum_{a_1=0}^3 \frac{P(X_j=x+a_1 \cap A_1=a_1 \cap L \mid \Gamma)}{P(L \mid \Gamma)} \\
+	={}& \frac{1}{P(L \mid \Gamma)} \sum_{a_1=0}^3 P(X_j=x+a_1 \cap A_1=a_1 \cap L \mid \Gamma) \\
+	={}& \frac{1}{P(L \mid \Gamma)} \sum_{a_1=0}^3 P(X_j=x+a_1 \mid \Gamma) P(A_1=a_1 \cap L \mid X_j=x+a_1 \cap \Gamma) \\
+	={}& \frac{1}{P(L \mid \Gamma)} \sum_{a_1=0}^3 P(X_j=x+a_1) P(A_1=a_1 \cap L \mid X_j=x+a_1 \cap \Gamma) \\
+	={}& \frac{1}{P(L \mid \Gamma)} \sum_{a_1=0}^3 P(X_j=x+a_1) P(A_1=a_1 \mid X_j=x+a_1) P(L \mid A_1=a_1 \cap X_j=x+a_1 \cap \Gamma) \\
+	={}& \frac{1}{P(L \mid \Gamma)} \sum_{a_1=0}^3 P(X_j=x+a_1) P(A_1=a_1 \mid X_j=x+a_1) P(L \mid A_1=a_1 \cap \Gamma) \\
+	={}& \frac{1}{P(L \mid \Gamma)} \sum_{a_1=0}^3 P(X_j=x+a_1) \frac{\binom{x+a_1}{a_1} \binom{n_j-x-a_1}{3-a_1}}{\binom{n_j}{3}} P(L \mid A_1=a_1 \cap \Gamma)
+\end{align*}
+
+\newpage
+\section{Top Deck}
+\dots
+
+\section{President Actions}
+\dots
+
+\end{document}
