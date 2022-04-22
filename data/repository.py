@@ -173,7 +173,7 @@ def save_leg_session(ls: LegislativeSession) -> None:
 
 
 def save_pres_action(a: PresidentAction) -> None:
-    row = [a.game_id, a.round_num, a.action, a.target_name, a.num_lib, a.accuse]
+    row = [a.game_id, a.round_num, a.action, a.target_name, a.peek_claim, a.accuse]
     _insert(row, config.PRES_ACTION_FILE_PATH)
 
 

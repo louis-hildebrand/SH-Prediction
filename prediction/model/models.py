@@ -270,7 +270,7 @@ def _prob_investigate(pres: Role, target: Role, accuse: bool, context: GameConte
 def _prob_president_action(action: PresidentAction, pres_name: str, role: dict[str, Role], context: GameContext) -> float:
     if action.action == PresidentActionType.PEEK:
         pres_role = role[pres_name]
-        return _peek(pres_role, action.num_lib, context)
+        return _peek(pres_role, action.peek_claim, context)
     elif action.action == PresidentActionType.INVESTIGATE:
         pres_role = role[pres_name]
         target_role = role[action.target_name]

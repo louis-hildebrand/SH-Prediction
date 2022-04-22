@@ -89,7 +89,7 @@ class PresidentAction:
         self.round_num = round_num
         self.action = action
         self.target_name = target_name
-        self.num_lib = num_lib
+        self.peek_claim = num_lib
         self.accuse = accuse
 
 
