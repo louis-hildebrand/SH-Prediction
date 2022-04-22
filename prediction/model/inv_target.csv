@@ -1,0 +1,9 @@
+president,target,probability_target
+Fas,Fas,INV_F_F
+Fas,Hit,INV_F_H
+Fas,Lib,1 - INV_F_F - INV_F_H
+Hit,Fas,INV_L_F
+Hit,Lib,1 - INV_L_F
+Lib,Fas,INV_L_F
+Lib,Hit,INV_L_H
+Lib,Lib,1 - INV_L_F - INV_L_H

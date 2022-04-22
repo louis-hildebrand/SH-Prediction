@@ -11,6 +11,7 @@ POLICY_CHAN_FILE = "prediction/model/policy_chan.csv"
 CLAIM_PRES_FILE = "prediction/model/claim_pres.csv"
 CLAIM_CHAN_FILE = "prediction/model/claim_chan.csv"
 PEEK_FILE = "prediction/model/peek.csv"
+INVESTIGATION_TARGET_FILE = "prediction/model/inv_target.csv"
 INVESTIGATE_FILE = "prediction/model/investigate.csv"
 
 
@@ -46,6 +47,7 @@ def _get_deck_model() -> pd.DataFrame:
 
 
 def _get_deck_parameters(context: GameContext) -> dict[str, float]:
+    # TODO: Delete this?
     param = {}
     param["PGA_0"] = _prob_pres_get_actual(0, 3, context.draw_pile, context.draw_pile_size)
     param["PGA_1"] = _prob_pres_get_actual(1, 3, context.draw_pile, context.draw_pile_size)
@@ -58,7 +60,6 @@ def _get_deck_parameters(context: GameContext) -> dict[str, float]:
 # Legislative session
 # ------------------------------------------------------------------------------
 def _get_leg_session_parameters(context: GameContext) -> dict[str, float]:
-    hitler_knows_fas = context.num_players < 7
     ALMOST_IMPOSSIBLE = 1e-6
     EXTREMELY_UNLIKELY = 0.005
     VERY_UNLIKELY = 0.01
@@ -84,7 +85,7 @@ def _get_leg_session_parameters(context: GameContext) -> dict[str, float]:
     param["PC_LF_FAS"] = 0.1 if context.lib_passed < 4 else (1 - ALMOST_IMPOSSIBLE)
     param["PC_LH_FAS"] = 0.01 if context.lib_passed < 4 else (1 - ALMOST_IMPOSSIBLE)
     if context.lib_passed < 4:
-        param["PC_FH_FAS"] = param["PP_HL1_FORCE_FAS"] if hitler_knows_fas else param["PC_LH_FAS"]
+        param["PC_FH_FAS"] = param["PP_HL1_FORCE_FAS"] if context.hitler_knows_fas() else param["PC_LH_FAS"]
     else:
         param["PC_FH_FAS"] = 1 - ALMOST_IMPOSSIBLE
     param["PC_XL_FAS"] = ALMOST_IMPOSSIBLE
@@ -191,25 +192,6 @@ def _prob_legislative_session(ls: LegislativeSession, pres_get_actual: int, role
 
 
 # ------------------------------------------------------------------------------
-# Any president action
-# ------------------------------------------------------------------------------
-def _prob_president_action(action: PresidentAction, pres_name: str, role: dict[str, Role], context: GameContext) -> float:
-    if action.action == PresidentActionType.PEEK:
-        pres_role = role[pres_name]
-        return _prob_peek(pres_role, action.num_lib, context)
-    elif action.action == PresidentActionType.INVESTIGATE:
-        pres_role = role[pres_name]
-        target_role = role[action.target_name]
-        return _prob_investigate(pres_role, target_role, action.accuse)
-    elif action.action == PresidentActionType.SHOOT and role[action.target_name] == Role.HIT:
-        # If the target was Hitler, the game would have been over
-        return 0
-    else:
-        # TODO: Implement models for selecting the next president and shooting
-        return 1
-
-
-# ------------------------------------------------------------------------------
 # Peek
 # ------------------------------------------------------------------------------
 @cache
@@ -239,16 +221,35 @@ def _prob_peek(pres: Role, num_lib: int, context: GameContext) -> float:
 # ------------------------------------------------------------------------------
 # Investigate
 # ------------------------------------------------------------------------------
+def _get_investigation_parameters(context: GameContext) -> dict[str, float]:
+    # Investigations only happen when there are at least 7 players, so there are always at least 2 vanilla Fascists and Hitler never knows who's who.
+    param = {}
+    param["INV_L_F"] = context.fas_players / (context.num_players - 1)
+    param["INV_L_H"] = 1 / (context.num_players - 1)
+    param["INV_F_F"] = 0.1
+    param["INV_F_H"] = 0.01
+    return param
+
+
 @cache
 def _get_investigation_table() -> pd.DataFrame:
-    return pd.read_csv(INVESTIGATE_FILE)
+    target_table = pd.read_csv(INVESTIGATION_TARGET_FILE)
+    accusation_table = pd.read_csv(INVESTIGATE_FILE)
+    df = pd.merge(target_table, accusation_table, how="inner", on=["president", "target"])
+    # Add parentheses around both columns in case the files are changed later
+    df["probability_target"] = "(" + df["probability_target"].astype(str) + ")"
+    df["probability_accuse"] = "(" + df["probability_accuse"].astype(str) + ")"
+    df["prob_str"] = df["probability_target"].str.cat(df["probability_accuse"], sep="*")
+    return df
 
 
-def _prob_investigate(pres: Role, target: Role, accuse: bool) -> float:
+def _prob_investigate(pres: Role, target: Role, accuse: bool, context: GameContext) -> float:
     inv_table = _get_investigation_table()
     matching_row = lambda x: x["president"] == str(pres) and x["target"] == str(target) and x["accuse"] == accuse
     inv_table = inv_table[inv_table.apply(matching_row, axis=1)]
-    return inv_table.iloc[0]["probability"]
+    prob_str = inv_table.iloc[0]["prob_str"]
+    param = _get_investigation_parameters(context)
+    return _eval_probability(prob_str, param)
 
 
 # ------------------------------------------------------------------------------
@@ -261,6 +262,25 @@ def _prob_investigate(pres: Role, target: Role, accuse: bool) -> float:
 # Shoot
 # ------------------------------------------------------------------------------
 # TODO
+
+
+# ------------------------------------------------------------------------------
+# Any president action
+# ------------------------------------------------------------------------------
+def _prob_president_action(action: PresidentAction, pres_name: str, role: dict[str, Role], context: GameContext) -> float:
+    if action.action == PresidentActionType.PEEK:
+        pres_role = role[pres_name]
+        return _prob_peek(pres_role, action.num_lib, context)
+    elif action.action == PresidentActionType.INVESTIGATE:
+        pres_role = role[pres_name]
+        target_role = role[action.target_name]
+        return _prob_investigate(pres_role, target_role, action.accuse, context)
+    elif action.action == PresidentActionType.SHOOT and role[action.target_name] == Role.HIT:
+        # If the target was Hitler, the game would have been over
+        return 0
+    else:
+        # TODO: Implement models for selecting the next president and shooting
+        return 1
 
 
 # ------------------------------------------------------------------------------

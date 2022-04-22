@@ -56,20 +56,6 @@ def _get_game(game_id: int, round_num: int) -> tuple[Game, list[Player], list[Le
     return game, players, leg_sessions, pres_actions
 
 
-def _count_fas_players(num_players: int) -> int:
-    """
-    Returns the number of vanilla fascists in a game with `num_players` players.
-    """
-    if num_players in [5, 6]:
-        return 1
-    elif num_players in [7, 8]:
-        return 2
-    elif num_players in [9, 10]:
-        return 3
-    else:
-        raise ValueError(f"Invalid number of players {num_players}.")
-
-
 def _role_assignments_with_givens(player_names: list[str], givens: dict[str, Role], remaining_fas: int) -> list[dict[str, Role]]:
     if remaining_fas == 0:
         return [givens]
@@ -96,7 +82,7 @@ def _get_all_role_assignments(player_names: list[str]) -> list[dict[str, Role]]:
     role_assignments = []
     for name in player_names:
         given = {name: Role.HIT}
-        num_fas_players = _count_fas_players(len(player_names))
+        num_fas_players = GameContext.count_fas_players(len(player_names))
         other_players = [p for p in player_names if p != name]
         role_assignments += _role_assignments_with_givens(other_players, given, num_fas_players)
     for ra in role_assignments:
