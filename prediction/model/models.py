@@ -1,4 +1,4 @@
-from data.models import LegislativeOutcome, LegislativeSession, PresidentAction, PresidentActionType, Role
+from data.models import LegislativeOutcome, LegislativeSession, Party, PresidentAction, PresidentActionType, Role
 from functools import cache
 from prediction.game_context import GameContext
 
@@ -25,13 +25,14 @@ def _eval_table(df: pd.DataFrame, param: dict[str, float]) -> pd.DataFrame:
     return df
 
 
-def _prob_pres_get_actual(n: int, num_lib: dict[int, float], tot_cards: int) -> float:
+def _prob_pres_get_actual(n: int, num_drawn: int, draw_pile: dict[int, float], tot_cards: int) -> float:
     prob = 0
-    for (nlib, p) in num_lib.items():
+    for (nlib, p) in draw_pile.items():
         if nlib > tot_cards:
             break
         nfas = tot_cards - nlib
-        prob += p * math.comb(nlib, n) * math.comb(nfas, 3 - n) / math.comb(tot_cards, 3)
+        # math.comb(n, k) returns 0 if f > n, so no need to worry about that case
+        prob += p * math.comb(nlib, n) * math.comb(nfas, num_drawn - n) / math.comb(tot_cards, num_drawn)
     return prob
 
 
@@ -46,10 +47,10 @@ def _get_deck_model() -> pd.DataFrame:
 
 def _get_deck_parameters(context: GameContext) -> dict[str, float]:
     param = {}
-    param["PGA_0"] = _prob_pres_get_actual(0, context.draw_pile_num_lib, context.draw_pile_size)
-    param["PGA_1"] = _prob_pres_get_actual(1, context.draw_pile_num_lib, context.draw_pile_size)
-    param["PGA_2"] = _prob_pres_get_actual(2, context.draw_pile_num_lib, context.draw_pile_size)
-    param["PGA_3"] = _prob_pres_get_actual(3, context.draw_pile_num_lib, context.draw_pile_size)
+    param["PGA_0"] = _prob_pres_get_actual(0, 3, context.draw_pile, context.draw_pile_size)
+    param["PGA_1"] = _prob_pres_get_actual(1, 3, context.draw_pile, context.draw_pile_size)
+    param["PGA_2"] = _prob_pres_get_actual(2, 3, context.draw_pile, context.draw_pile_size)
+    param["PGA_3"] = _prob_pres_get_actual(3, 3, context.draw_pile, context.draw_pile_size)
     return param
 
 
@@ -136,16 +137,12 @@ def _get_leg_session_parameters(context: GameContext) -> dict[str, float]:
 @cache
 def _get_leg_session_table() -> pd.DataFrame:
     # Get tables
-    deck_table = _get_deck_model()
     policy_pres = pd.read_csv(POLICY_PRES_FILE)
     policy_chan = pd.read_csv(POLICY_CHAN_FILE)
     claim_pres = pd.read_csv(CLAIM_PRES_FILE)
     claim_chan = pd.read_csv(CLAIM_CHAN_FILE)
     # Join tables
-    df = pd.merge(deck_table, policy_pres,
-        how="inner",
-        on=["pres_get_actual"])
-    df = pd.merge(df, policy_chan,
+    df = pd.merge(policy_pres, policy_chan,
         how="inner",
         on=["president", "chancellor", "chan_get_actual"])
     df = pd.merge(df, claim_pres,
@@ -156,31 +153,17 @@ def _get_leg_session_table() -> pd.DataFrame:
         on=["chancellor", "chan_get_actual", "pres_give_claim", "outcome"])
     # Get final probability expression (product of individual probabilities)
     # Add parentheses around each expression before multiplying
-    df["probability_pga"] = "(" + df["probability_pga"] + ")"
     df["probability_pp"] = "(" + df["probability_pp"] + ")"
     df["probability_pc"] = "(" + df["probability_pc"] + ")"
     df["probability_cp"] = "(" + df["probability_cp"] + ")"
     df["probability_cc"] = "(" + df["probability_cc"] + ")"
-    df["prob_str"] = df["probability_pp"].str.cat(df[["probability_pga", "probability_pc", "probability_cp", "probability_cc"]], sep="*")
+    df["prob_str"] = df["probability_pp"].str.cat(df[["probability_pc", "probability_cp", "probability_cc"]], sep="*")
     return df
 
 
-def _prob_nlib_remaining(n: int, ls_table: pd.DataFrame, old_draw_pile: dict[int, float]) -> float:
-    # The probability that there are n liberal policies remaining in the draw pile is
-    #   P(n before, 0 used) + P(n + 1 before, 1 used) + P(n + 2 before, 2 used) + P(n + 3 before, 3 used)
-    prob = 0
-    for k in range(4):
-        if n + k > 6:
-            break
-        prob_tot = sum(ls_table["probability"])
-        prob_k_used = sum(ls_table.where(ls_table["pres_get_actual"] == k, 0)["probability"]) / prob_tot
-        prob += old_draw_pile[n + k] * prob_k_used
-    return prob
-
-
-def prob_legislative_session(ls: LegislativeSession, role: dict[str, Role], context: GameContext) -> float:
+def _prob_legislative_session(ls: LegislativeSession, pres_get_actual: int, role: dict[str, Role], context: GameContext) -> float:
     """
-    Calculates the probability of the given legislative session given the specifed roles. Also updates the state of the draw pile.
+    Calculates the probability of the given legislative session given the specifed roles and number of Liberal policies received by the President.
     """
     pres_role = role[ls.pres_name]
     chan_role = role[ls.chan_name]
@@ -194,7 +177,8 @@ def prob_legislative_session(ls: LegislativeSession, role: dict[str, Role], cont
             row.outcome == str(ls.outcome) and
             row.pres_get_claim == ls.pres_get_claim and
             row.pres_give_claim == ls.pres_give_claim and
-            row.chan_get_claim == ls.chan_get_claim)
+            row.chan_get_claim == ls.chan_get_claim and
+            row.pres_get_actual == pres_get_actual)
     ls_table = _get_leg_session_table()
     ls_table = ls_table[ls_table.apply(matching_row, axis=1)]
     if len(ls_table) == 0:
@@ -203,17 +187,13 @@ def prob_legislative_session(ls: LegislativeSession, role: dict[str, Role], cont
     param = _get_leg_session_parameters(context)
     ls_table = _eval_table(ls_table, param)
     prob = sum(ls_table["probability"])
-    # Update the probabilities for the deck
-    old_draw_pile = context.draw_pile_num_lib.copy()
-    for n in range(7):
-        context.draw_pile_num_lib[n] = _prob_nlib_remaining(n, ls_table, old_draw_pile)
     return prob
 
 
 # ------------------------------------------------------------------------------
 # Any president action
 # ------------------------------------------------------------------------------
-def prob_president_action(action: PresidentAction, pres_name: str, role: dict[str, Role], context: GameContext) -> float:
+def _prob_president_action(action: PresidentAction, pres_name: str, role: dict[str, Role], context: GameContext) -> float:
     if action.action == PresidentActionType.PEEK:
         pres_role = role[pres_name]
         return _prob_peek(pres_role, action.num_lib, context)
@@ -281,3 +261,108 @@ def _prob_investigate(pres: Role, target: Role, accuse: bool) -> float:
 # Shoot
 # ------------------------------------------------------------------------------
 # TODO
+
+
+# ------------------------------------------------------------------------------
+# Full game
+# ------------------------------------------------------------------------------
+def _new_draw_pile_pmf(x: int, prob_ls: float, old_draw_pile: dict[int, float], old_size: int, prob_ls_given_pga: dict[int, float]) -> float:
+    prob = 0
+    for a in range(min(4, 7-x)):
+        binom_coeff = math.comb(x+a, a) * math.comb(old_size-x-a, 3-a) / math.comb(old_size, 3)
+        prob += old_draw_pile[x+a] * binom_coeff * prob_ls_given_pga[a]
+    return prob / prob_ls
+
+
+def _legislative_session(ls: LegislativeSession, role: dict[str, float], context: GameContext) -> float:
+    """
+    Returns the probability of the given legislative session and updates the game state in-place.
+    """
+    # Calculate the probability of this outcome given each possible agenda
+    prob_ls_given_pga = {}
+    for pres_get_actual in range(4):
+        prob_ls_given_pga[pres_get_actual] = _prob_legislative_session(ls, pres_get_actual, role, context)
+    print(prob_ls_given_pga)
+    prob_pga = lambda a: _prob_pres_get_actual(a, 3, context.draw_pile, context.draw_pile_size)
+    prob_ls = sum([p*prob_pga(a) for a, p in prob_ls_given_pga.items()])
+    # Return immediately to avoid division by zero
+    if prob_ls == 0:
+        return 0
+    # Update state of draw pile
+    # Reshuffle deck if necessary, otherwise make full calculations
+    if ls.outcome == LegislativeOutcome.FAS:
+        context.fas_passed += 1
+    elif ls.outcome == LegislativeOutcome.LIB:
+        context.lib_passed += 1
+    if context.draw_pile_size < 6:
+        context.reshuffle_deck()
+    else:
+        old_draw_pile = context.draw_pile.copy()
+        for x in range(7):
+            new_prob = _new_draw_pile_pmf(x, prob_ls, old_draw_pile, context.draw_pile_size, prob_ls_given_pga)
+            context.draw_pile[x] = new_prob
+        context.draw_pile_size -= 3
+    return prob_ls
+
+
+def _top_deck(outcome: Party, context: GameContext) -> float:
+    """
+    Returns the probability of the given top-deck event and updates the game state in-place.
+    """
+    # TODO: Is it ever necessary to reshuffle the deck here?
+    if outcome == Party.FAS:
+        # Find P(F)
+        prob = _prob_pres_get_actual(0, 1, context.draw_pile, context.draw_pile_size)
+        # Calculate P(X' = x | F) for each number x
+        # P(X' = x | F) = (n - x) / n * P(X = x) / P(F)
+        for x in range(7):
+            prior_prob = context.draw_pile[x]
+            updated_prob = (context.draw_pile_size - x) * prior_prob / (context.draw_pile_size * prob)
+            context.draw_pile[x] = updated_prob
+        # Update number of policies passed and remaining in the draw pile
+        context.draw_pile_size -= 1
+        context.fas_passed += 1
+    elif outcome == Party.LIB:
+        # Find P(L)
+        prob = _prob_pres_get_actual(1, 1, context.draw_pile, context.draw_pile_size)
+        # Calculate P(X' = x | L) for each number x
+        # P(X' = x | L) = (x + 1) / n * P(X = x + 1) / P(L)
+        for x in range(7):
+            prior_prob = context.draw_pile[x] if x < 6 else 0
+            updated_prob = (x + 1) * prior_prob / (context.draw_pile_size * prob)
+            context.draw_pile[x] = updated_prob
+        # Update number of policies passed and remaining in the draw pile
+        context.draw_pile_size -= 1
+        context.lib_passed += 1
+    else:
+        raise ValueError(f"Invalid outcome '{outcome}'.")
+    return prob
+
+
+def _president_action(action: PresidentAction, pres_name: str, role: dict[str, Role], context: GameContext) -> float:
+    # TODO: Update game state
+    ...
+    return _prob_president_action(action, pres_name, role, context)
+
+
+def prob_game_given_roles(leg_sessions: list[LegislativeSession], pres_actions: list[PresidentAction], role: dict[str, Role]) -> float:
+    num_players = len(role)
+    context = GameContext(num_players)
+    prob = 1
+    for ls in leg_sessions:
+        # Successful government
+        if ls.outcome != LegislativeOutcome.REJECTED:
+            # Legislative session
+            prob *= _legislative_session(ls, role, context)
+            # President action (if any)
+            pres_actions_in_round = [a for a in pres_actions if a.round_num == ls.round_num]
+            if pres_actions_in_round:
+                action = pres_actions_in_round[0]
+                prob *= _president_action(action, ls.pres_name, role, context)
+        # Unsuccessful government and top-deck
+        elif ls.top_deck:
+            prob *= _top_deck(ls.top_deck, context)
+        # End immediately if probability reaches 0
+        if prob == 0:
+            break
+    return prob

@@ -6,7 +6,8 @@ class GameContext:
         self.fas_passed = 0
         self.lib_passed = 0
         self.draw_pile_size = GameContext.TOTAL_POLICIES
-        self.draw_pile_num_lib = {
+        # draw_pile[n] is the probability that there are n liberal policies in the draw pile
+        self.draw_pile = {
             0: 0.0,
             1: 0.0,
             2: 0.0,
@@ -18,7 +19,7 @@ class GameContext:
     
     def reshuffle_deck(self) -> None:
         self.draw_pile_size = GameContext.TOTAL_POLICIES - self.fas_passed - self.lib_passed
-        self.draw_pile_num_lib = {
+        self.draw_pile = {
             0: 0.0,
             1: 0.0,
             2: 0.0,
@@ -27,4 +28,4 @@ class GameContext:
             5: 0.0,
             6: 0.0
         }
-        self.draw_pile_num_lib[6 - self.lib_passed] = 1.0
+        self.draw_pile[6 - self.lib_passed] = 1.0

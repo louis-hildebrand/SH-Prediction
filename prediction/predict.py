@@ -92,7 +92,6 @@ def _fill_roles(role_assignment: dict[str, Role], player_names: list[str]) -> No
             role_assignment[name] = Role.LIB
 
 
-
 def _get_all_role_assignments(player_names: list[str]) -> list[dict[str, Role]]:
     role_assignments = []
     for name in player_names:
@@ -103,44 +102,6 @@ def _get_all_role_assignments(player_names: list[str]) -> list[dict[str, Role]]:
     for ra in role_assignments:
         _fill_roles(ra, player_names)
     return role_assignments
-
-
-def _prob_game_given_roles(leg_sessions: list[LegislativeSession], pres_actions: list[PresidentAction], role: dict[str, Role]) -> float:
-    num_players = len(role)
-    context = GameContext(num_players)
-    prob = 1
-    for ls in leg_sessions:
-        # Skip probability calculations for rejected rounds
-        if ls.outcome != LegislativeOutcome.REJECTED:
-            # Reshuffle deck if necessary
-            if context.draw_pile_size < 3:
-                context.reshuffle_deck()
-            # Legislative session
-            prob *= pmodel.prob_legislative_session(ls, role, context)
-            # President action (if any)
-            pres_actions_in_round = [a for a in pres_actions if a.round_num == ls.round_num]
-            if pres_actions_in_round:
-                action = pres_actions_in_round[0]
-                prob *= pmodel.prob_president_action(action, ls.pres_name, role, context)
-        # Update game state
-        if ls.outcome == LegislativeOutcome.FAS:
-            context.fas_passed += 1
-            context.draw_pile_size -= 3
-        elif ls.outcome == LegislativeOutcome.LIB:
-            context.lib_passed += 1
-            context.draw_pile_size -= 3
-        elif ls.top_deck:
-            context.draw_pile_size -= 1
-            if ls.top_deck == Party.FAS:
-                context.fas_passed += 1
-            elif ls.top_deck == Party.LIB:
-                context.lib_passed += 1
-                # Update draw pile state
-                ...
-        # End immediately if probability reaches 0
-        if prob == 0:
-            break
-    return prob
 
 
 def _get_hitler_name(role_assignment: dict[str, Role]) -> str:
@@ -174,7 +135,7 @@ def main(args: Namespace) -> None:
     game_probabilities = []
     num_assignments = len(role_assignments)
     for (i, ra) in enumerate(role_assignments, start=1):
-        prob = _prob_game_given_roles(leg_sessions, pres_actions, ra)
+        prob = pmodel.prob_game_given_roles(leg_sessions, pres_actions, ra)
         game_probabilities.append((ra, prob))
         print(f"{i}/{num_assignments}", end="\r")
     total_probability = sum([x[1] for x in game_probabilities])
