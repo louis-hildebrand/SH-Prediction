@@ -139,8 +139,8 @@ In this case, the PMF of $X_{j+1}$ is
 Let $R_p$ be the role of the President and let $R_t$ be the role of the target of the investigation. Let $Y$ be 1 if the President claims that the target is Fascist (i.e. accuses them) and 0 otherwise. Given a President role $r_p$, a target role $r_t$, and an outcome $y$, we want to find $P(R_t=r_t \cap Y=y \mid R_p=r_r)$. This can be expressed as the product $P(R_t=r_t \mid R_p=r_p) P(Y=y \mid R_t=r_t \cap R_p=r_p)$. In other words, we need to know how likely a President is to choose a target of the given role and then how likely they are to accuse their target after seeing their party affiliation. Each probability can be estimated ahead of time. For the President's choice of target, assume that:
 \begin{itemize}
 	\item Fascists are less likely to investigate each other and extremely unlikely to investigate Hitler
-	\item Hitler chooses at random if they do not know players' roles, otherwise they are biased towards investigating Liberals
 	\item Liberals choose at random
+	\item Hitler chooses at random (since investigations only happen when there are at least seven players, at which point Hitler does not know the identities of the Fascists)
 \end{itemize}
 For the decision to accuse or not accuse, assume that:
 \begin{itemize}
