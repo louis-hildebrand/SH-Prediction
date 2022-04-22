@@ -6,13 +6,13 @@ import math
 import pandas as pd
 
 
-POLICY_PRES_FILE = "prediction/model/policy_pres.csv"
-POLICY_CHAN_FILE = "prediction/model/policy_chan.csv"
-CLAIM_PRES_FILE = "prediction/model/claim_pres.csv"
-CLAIM_CHAN_FILE = "prediction/model/claim_chan.csv"
-PEEK_FILE = "prediction/model/peek.csv"
-INVESTIGATION_TARGET_FILE = "prediction/model/inv_target.csv"
-INVESTIGATE_FILE = "prediction/model/investigate.csv"
+POLICY_PRES_FILE = "prediction/model/tables/policy_pres.csv"
+POLICY_CHAN_FILE = "prediction/model/tables/policy_chan.csv"
+CLAIM_PRES_FILE = "prediction/model/tables/claim_pres.csv"
+CLAIM_CHAN_FILE = "prediction/model/tables/claim_chan.csv"
+PEEK_FILE = "prediction/model/tables/peek.csv"
+INVESTIGATION_TARGET_FILE = "prediction/model/tables/inv_target.csv"
+INVESTIGATE_FILE = "prediction/model/tables/investigate.csv"
 
 
 def _eval_probability(probability: str, param: dict[str, float]) -> float:
