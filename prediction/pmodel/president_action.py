@@ -1,7 +1,7 @@
 from data.models import PresidentAction, PresidentActionType, Role
 from prediction.pmodel.game_context import GameContext
-from prediction.model.peek import peek
-from prediction.model.investigate import investigate
+from prediction.pmodel.peek import peek
+from prediction.pmodel.investigate import investigate
 
 
 def president_action(action: PresidentAction, pres_name: str, role: dict[str, Role], context: GameContext) -> float:

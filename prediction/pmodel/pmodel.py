@@ -1,8 +1,8 @@
 from data.models import LegislativeOutcome, LegislativeSession, PresidentAction, Role
 from prediction.pmodel.game_context import GameContext
-from prediction.model.legislative_session import legislative_session
-from prediction.model.president_action import president_action
-from prediction.model.top_deck import top_deck
+from prediction.pmodel.legislative_session import legislative_session
+from prediction.pmodel.president_action import president_action
+from prediction.pmodel.top_deck import top_deck
 
 
 def prob_game_given_roles(leg_sessions: list[LegislativeSession], pres_actions: list[PresidentAction], role: dict[str, Role]) -> float:

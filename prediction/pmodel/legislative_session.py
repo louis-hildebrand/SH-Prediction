@@ -4,13 +4,13 @@ from prediction.pmodel.game_context import GameContext
 
 import math
 import pandas as pd
-import prediction.model.utils as utils
+import prediction.pmodel.utils as utils
 
 
-POLICY_PRES_FILE = "prediction/model/tables/policy_pres.csv"
-POLICY_CHAN_FILE = "prediction/model/tables/policy_chan.csv"
-CLAIM_PRES_FILE = "prediction/model/tables/claim_pres.csv"
-CLAIM_CHAN_FILE = "prediction/model/tables/claim_chan.csv"
+POLICY_PRES_FILE = "prediction/pmodel/tables/policy_pres.csv"
+POLICY_CHAN_FILE = "prediction/pmodel/tables/policy_chan.csv"
+CLAIM_PRES_FILE = "prediction/pmodel/tables/claim_pres.csv"
+CLAIM_CHAN_FILE = "prediction/pmodel/tables/claim_chan.csv"
 
 
 def _get_leg_session_parameters(context: GameContext) -> dict[str, float]:
