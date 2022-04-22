@@ -52,7 +52,7 @@ Given an assignment of roles, the roles of the President and the Chancellor are 
 \end{itemize}
 
 \subsection{Session Outcome}
-Given roles $r_p$ and $r_c$, a policy outcome $y$, and claims $m_1$, $m_2$, and $m_3$, we want to calculate $p = P(Y=y \cap M_1=m_1 \cap M_2=m_2 \cap M_3=m_3 \mid R_p=r_p \cap R_c=r_c)$. Let $\Gamma$ be the event that $R_p=r_p \cap R_c=r_c$ and let $L$ be the event that $Y=y \cap M_1=m_1 \cap M_2=m_2 \cap M_3=m_3$. Assume that the state of the draw pile at the start of each legislative session is independent of the players who will be President and Chancellor.
+Given roles $r_p$ and $r_c$, a policy outcome $y$, and claims $m_1$, $m_2$, and $m_3$, we want to calculate $P(Y=y \cap M_1=m_1 \cap M_2=m_2 \cap M_3=m_3 \mid R_p=r_p \cap R_c=r_c)$. Let $\Gamma$ be the event that $R_p=r_p \cap R_c=r_c$ and let $L$ be the event that $Y=y \cap M_1=m_1 \cap M_2=m_2 \cap M_3=m_3$. Assume that the state of the draw pile at the start of each legislative session is independent of the players who will be President and Chancellor.
 
 Then
 \begin{align*}
@@ -134,7 +134,22 @@ In this case, the PMF of $X_{j+1}$ is
 \end{align*}
 
 \newpage
-\section{President Actions}
-\dots
+\section{Executive Actions}
+\subsection{Investigation}
+Let $R_p$ be the role of the President and let $R_t$ be the role of the target of the investigation. Let $Y$ be 1 if the President claims that the target is Fascist (i.e. accuses them) and 0 otherwise. Given a President role $r_p$, a target role $r_t$, and an outcome $y$, we want to find $P(R_t=r_t \cap Y=y \mid R_p=r_r)$. This can be expressed as the product $P(R_t=r_t \mid R_p=r_p) P(Y=y \mid R_t=r_t \cap R_p=r_p)$. In other words, we need to know how likely a President is to choose a target of the given role and then how likely they are to accuse their target after seeing their party affiliation. Each probability can be estimated ahead of time. For the President's choice of target, assume that:
+\begin{itemize}
+	\item Fascists are less likely to investigate each other and extremely unlikely to investigate Hitler
+	\item Hitler chooses at random if they do not know players' roles, otherwise they are biased towards investigating Liberals
+	\item Liberals choose at random
+\end{itemize}
+For the decision to accuse or not accuse, assume that:
+\begin{itemize}
+	\item Fascists will sometimes accuse Liberals, but are unlikely to accuse another Fascist and very unlikely to accuse Hitler
+	\item Hitler is unlikely to make accusations in general and is more likely to accuse a Fascist than a Liberal
+	\item Liberals will always tell the truth
+\end{itemize}
+
+\newpage
+\subsection{Policy Peek}
 
 \end{document}
