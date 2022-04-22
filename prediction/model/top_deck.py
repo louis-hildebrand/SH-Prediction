@@ -1,7 +1,7 @@
 from data.models import Party
 from prediction.game_context import GameContext
 
-import prediction.utils as utils
+import prediction.model.utils as utils
 
 
 def top_deck(outcome: Party, context: GameContext) -> float:

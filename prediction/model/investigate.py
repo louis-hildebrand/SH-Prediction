@@ -3,11 +3,11 @@ from functools import cache
 from prediction.game_context import GameContext
 
 import pandas as pd
-import prediction.utils as utils
+import prediction.model.utils as utils
 
 
-INVESTIGATION_TARGET_FILE = "prediction/tables/inv_target.csv"
-INVESTIGATE_FILE = "prediction/tables/investigate.csv"
+INVESTIGATION_TARGET_FILE = "prediction/model/tables/inv_target.csv"
+INVESTIGATE_FILE = "prediction/model/tables/investigate.csv"
 
 
 def _get_investigation_parameters(context: GameContext) -> dict[str, float]:

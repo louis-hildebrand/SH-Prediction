@@ -6,7 +6,7 @@ import math
 import pandas as pd
 
 
-PEEK_FILE = "prediction/tables/peek.csv"
+PEEK_FILE = "prediction/model/tables/peek.csv"
 
 
 @cache
