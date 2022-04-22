@@ -126,30 +126,20 @@ def _plot_individual_probabilities(ind_prob: pd.DataFrame) -> None:
     plt.show()
 
 
-def main(args: Namespace) -> None:
-    game, players, leg_sessions, pres_actions = _get_game(args.game, args.round)
-    max_round = max([ls.round_num for ls in leg_sessions])
-    print(f"Making prediction for game {game.game_id} up to and including round {max_round}.")
-    player_names = [p.name for p in players]
-    role_assignments = _get_all_role_assignments(player_names)
-    game_probabilities = []
-    num_assignments = len(role_assignments)
-    for (i, ra) in enumerate(role_assignments, start=1):
-        prob = pmodel.prob_game_given_roles(leg_sessions, pres_actions, ra)
-        game_probabilities.append((ra, prob))
-        print(f"{i}/{num_assignments}", end="\r")
-    total_probability = sum([x[1] for x in game_probabilities])
-    # Probabilities for role assignments
+def _display_team_probabilities(game_probabilities: list[tuple[dict[str, Role], float]]) -> None:
     print()
     print("Role assignment probabilities")
     print("-----------------------------")
-    game_probabilities = [(ra, p/total_probability) for (ra, p) in game_probabilities]
     game_probabilities.sort(key=lambda x: x[1], reverse=True)
     for (roles, prob) in game_probabilities:
+        if prob == 0:
+            break
         hitler_name = _get_hitler_name(roles)
         fascist_names = _get_fascist_names(roles)
         print(f"Hitler: {hitler_name}, fascists: {fascist_names}: {100*prob:.2f}%")
-    # Probabilities for individuals
+
+
+def _display_individual_probabilities(game_probabilities: list[tuple[dict[str, Role], float]], player_names: list[str]) -> None:
     print()
     print("Individual probabilities")
     print("------------------------")
@@ -166,3 +156,21 @@ def main(args: Namespace) -> None:
         individual_probabilities[name] = ind_prob
     print(pd.DataFrame(individual_probabilities, index=["Fas", "Hit", "Lib"]))
     _plot_individual_probabilities(individual_probabilities)
+
+
+def main(args: Namespace) -> None:
+    game, players, leg_sessions, pres_actions = _get_game(args.game, args.round)
+    max_round = max([ls.round_num for ls in leg_sessions])
+    print(f"Making prediction for game {game.game_id} up to and including round {max_round}.")
+    player_names = [p.name for p in players]
+    role_assignments = _get_all_role_assignments(player_names)
+    game_probabilities = []
+    num_assignments = len(role_assignments)
+    for (i, ra) in enumerate(role_assignments, start=1):
+        prob = pmodel.prob_game_given_roles(leg_sessions, pres_actions, ra)
+        game_probabilities.append((ra, prob))
+        print(f"{i}/{num_assignments}", end="\r")
+    total_probability = sum([x[1] for x in game_probabilities])
+    game_probabilities = [(ra, p/total_probability) for (ra, p) in game_probabilities]
+    _display_team_probabilities(game_probabilities)
+    _display_individual_probabilities(game_probabilities, player_names)
