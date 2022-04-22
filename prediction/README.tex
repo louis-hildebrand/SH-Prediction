@@ -35,7 +35,7 @@ Assuming each assignment of roles is equally likely:
 \end{align*}
 So we just need to find the probability of the game happening the way it did given each possible assignment of roles.
 
-For simplicity, assume the probability of each legislative session, president action, etc. depends only on the current state of the draw pile (i.e. players' decisions are independent of decisions from previous rounds). Let $X_j$ be a random variable corresponding to the number of Liberal policies remaining in the draw pile at the start of the $j$th round. Let $n_j$ be the total number of policies in the draw pile at the start of the $j$th round. At the beginning of the game, $X_1 = 6$ with a probability of 1 and $n_1 = 17$.
+For simplicity, assume the probability of each legislative session, president action, etc. depends only on the current state of the draw pile (i.e. players' decisions are independent of decisions from previous rounds). Let $X_j$ be a random variable corresponding to the number of Liberal policies remaining in the draw pile at the start of the $j$th step in the game (either a legislative session under a successfully-elected government, a top-deck, or an executive action). Let $n_j$ be the total number of policies in the draw pile at the start of the $j$th step. At the beginning of the game, $X_1 = 6$ with a probability of 1 and $n_1 = 17$.
 
 \section{Legislative Sessions}
 \subsection{Definitions}
@@ -97,8 +97,43 @@ After each legislative session, we want to update the state of the draw pile. Th
 
 \newpage
 \section{Top Deck}
-\dots
+Let $F$ be the event that the policy enacted was Fascist and let $L$ be the event that it is Liberal. We can calculate the probability of whichever event occurred and update the state of the draw pile accordingly.
 
+\subsection{Fascist Policy}
+The probability that a Fascist policy is enacted is
+\begin{align*}
+	P(F)
+		&= \sum_{x=0}^6 P(F \cap X_j=x) \\
+		&= \sum_{x=0}^6 P(X_j=x) P(F \mid X_j=x) \\
+		&= \sum_{x=0}^6 P(X_j=x) \frac{n_j-x}{n_j}
+\end{align*}
+
+The PMF of $X_{j+1}$ is
+\begin{align*}
+	P(X_{j+1}=x \mid F)
+		&= P(X_j=x \mid F) \\
+		&= P(F \mid X_j=x) \frac{P(X_j=x)}{P(F)} \\
+		&= \frac{n_j-x}{n_j} \frac{P(X_j=x)}{P(F)}
+\end{align*}
+
+\subsection{Liberal Policy}
+The probability that a Liberal policy is selected is
+\begin{align*}
+	P(L)
+		&= \sum_{x=0}^6 P(L \cap X_j=x) \\
+		&= \sum_{x=0}^6 P(X_j=x) P(L \mid X_j=x) \\
+		&= \sum_{x=0}^6 P(X_j=x) \frac{x}{n_j}
+\end{align*}
+
+In this case, the PMF of $X_{j+1}$ is
+\begin{align*}
+	P(X_{j+1}=x \mid L)
+		&= P(X_j=x+1 \mid L) \\
+		&= P(L \mid X_j=x+1) \frac{P(X_j=x+1)}{P(L)} \\
+		&= \frac{x+1}{n_j} \frac{P(X_j=x+1)}{P(L)}
+\end{align*}
+
+\newpage
 \section{President Actions}
 \dots
 
