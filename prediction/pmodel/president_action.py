@@ -1,5 +1,5 @@
 from data.models import PresidentAction, PresidentActionType, Role
-from prediction.game_context import GameContext
+from prediction.pmodel.game_context import GameContext
 from prediction.model.peek import peek
 from prediction.model.investigate import investigate
 

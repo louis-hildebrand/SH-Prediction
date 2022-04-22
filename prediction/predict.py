@@ -1,6 +1,6 @@
 from argparse import Namespace
 from data.models import Game, LegislativeSession, Player, PresidentAction, LegislativeOutcome, Party, Role
-from prediction.game_context import GameContext
+from prediction.pmodel.game_context import GameContext
 
 import data.repository as re
 import matplotlib.pyplot as plt

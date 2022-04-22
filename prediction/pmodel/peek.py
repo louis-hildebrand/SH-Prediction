@@ -1,6 +1,6 @@
 from data.models import Role
 from functools import cache
-from prediction.game_context import GameContext
+from prediction.pmodel.game_context import GameContext
 
 import math
 import pandas as pd
