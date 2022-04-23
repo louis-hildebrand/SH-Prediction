@@ -1,8 +1,9 @@
 from argparse import Namespace
-from data.models import Game, LegislativeSession, Player, PresidentAction, LegislativeOutcome, Party, Role
+from data.models import Game, LegislativeSession, Player, PresidentAction, LegislativeOutcome, Role
 from prediction.pmodel.game_context import GameContext
 
 import data.repository as re
+import math
 import matplotlib.pyplot as plt
 import pandas as pd
 import prediction.pmodel.pmodel as pmodel
@@ -13,6 +14,11 @@ rgb = lambda r, g, b: (r/255, g/255, b/255)
 FAS_COLOUR = rgb(255, 124, 36)  # "chocolate1"
 HIT_COLOUR = rgb(208, 4, 4)  # "red3"
 LIB_COLOUR = rgb(136, 204, 252)  # "skyblue1"
+
+# Progress bar
+TOT_BARS = 60
+FILL_SYMBOL = "\u25A0"
+EMPTY_SYMBOL = "-"
 
 
 def _max_round(leg_sessions: list[LegislativeSession]) -> int:
@@ -90,12 +96,32 @@ def _get_all_role_assignments(player_names: list[str]) -> list[dict[str, Role]]:
     return role_assignments
 
 
+def _update_progress_bar(done: int, total: int) -> None:
+    filled_bars = math.floor(TOT_BARS*done/total)
+    empty_bars = TOT_BARS - filled_bars
+    msg = f"[{FILL_SYMBOL*filled_bars}{EMPTY_SYMBOL*empty_bars}] {done}/{total} ({100*done/total:.0f}%)"
+    print(msg, end="\r")
+
+
 def _get_hitler_name(role_assignment: dict[str, Role]) -> str:
     return next(name for (name, role) in role_assignment.items() if role == Role.HIT)
 
 
 def _get_fascist_names(role_assignment: dict[str, Role]) -> str:
     return [name for (name, role) in role_assignment.items() if role == Role.FAS]
+
+
+def _display_team_probabilities(game_probabilities: list[tuple[dict[str, Role], float]]) -> None:
+    print()
+    print("Role assignment probabilities")
+    print("-----------------------------")
+    game_probabilities.sort(key=lambda x: x[1], reverse=True)
+    for (roles, prob) in game_probabilities:
+        if prob < 0.0001:
+            break
+        hitler_name = _get_hitler_name(roles)
+        fascist_names = _get_fascist_names(roles)
+        print(f"Hitler: {hitler_name}, fascists: {fascist_names}: {100*prob:.2f}%")
 
 
 def _plot_individual_probabilities(ind_prob: pd.DataFrame) -> None:
@@ -110,19 +136,6 @@ def _plot_individual_probabilities(ind_prob: pd.DataFrame) -> None:
     ax.bar(labels, prob_lib, bottom = [pf + ph for (pf, ph) in zip(prob_fas, prob_hit)], label="Lib", color=LIB_COLOUR)
 
     plt.show()
-
-
-def _display_team_probabilities(game_probabilities: list[tuple[dict[str, Role], float]]) -> None:
-    print()
-    print("Role assignment probabilities")
-    print("-----------------------------")
-    game_probabilities.sort(key=lambda x: x[1], reverse=True)
-    for (roles, prob) in game_probabilities:
-        if prob == 0:
-            break
-        hitler_name = _get_hitler_name(roles)
-        fascist_names = _get_fascist_names(roles)
-        print(f"Hitler: {hitler_name}, fascists: {fascist_names}: {100*prob:.2f}%")
 
 
 def _display_individual_probabilities(game_probabilities: list[tuple[dict[str, Role], float]], player_names: list[str]) -> None:
@@ -140,7 +153,9 @@ def _display_individual_probabilities(game_probabilities: list[tuple[dict[str, R
             else:
                 ind_prob[2] += prob
         individual_probabilities[name] = ind_prob
-    print(pd.DataFrame(individual_probabilities, index=["Fas", "Hit", "Lib"]))
+    pd.options.display.float_format = '{:,.1%}'.format
+    df = pd.DataFrame(individual_probabilities, index=["Fas", "Hit", "Lib"])
+    print(df)
     _plot_individual_probabilities(individual_probabilities)
 
 
@@ -155,7 +170,7 @@ def main(args: Namespace) -> None:
     for (i, ra) in enumerate(role_assignments, start=1):
         prob = pmodel.prob_game_given_roles(leg_sessions, pres_actions, ra)
         game_probabilities.append((ra, prob))
-        print(f"{i}/{num_assignments}", end="\r")
+        _update_progress_bar(i, num_assignments)
     total_probability = sum([x[1] for x in game_probabilities])
     game_probabilities = [(ra, p/total_probability) for (ra, p) in game_probabilities]
     _display_team_probabilities(game_probabilities)
