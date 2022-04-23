@@ -4,6 +4,7 @@ Repository layer to read, write, and delete gameplay data.
 
 from data.models import Player, LegislativeSession, PresidentAction, Game, LegislativeOutcome, Party, PresidentActionType, Role, WinReason
 from datetime import datetime
+from functools import cache
 from typing import Callable
 
 import config
@@ -100,31 +101,19 @@ def _insert(row: list, file: str) -> None:
 # ------------------------------------------------------------------------------
 # Read queries
 # ------------------------------------------------------------------------------
-_players = None
-_leg_sessions = None
-_pres_actions = None
-_games = None
-
-
+@cache
 def get_all_pres_actions() -> list[PresidentAction]:
-    global _pres_actions
-    if _pres_actions is None:
-        _pres_actions = _get_all(config.PRES_ACTION_FILE_PATH, _parse_pres_action)
-    return _pres_actions
+    return _get_all(config.PRES_ACTION_FILE_PATH, _parse_pres_action)
 
 
+@cache
 def get_all_leg_sessions() -> list[LegislativeSession]:
-    global _leg_sessions
-    if _leg_sessions is None:
-        _leg_sessions = _get_all(config.LEG_SESSION_FILE_PATH, _parse_leg_session)
-    return _leg_sessions
+    return _get_all(config.LEG_SESSION_FILE_PATH, _parse_leg_session)
 
 
+@cache
 def get_all_players() -> list[Player]:
-    global _players
-    if _players is None:
-        _players = _get_all(config.PLAYER_FILE_PATH, _parse_player)
-    return _players
+    return _get_all(config.PLAYER_FILE_PATH, _parse_player)
 
 
 def get_player_by_game_and_name(game_id: int, name: str) -> Player:
@@ -137,13 +126,12 @@ def get_player_by_game_and_name(game_id: int, name: str) -> Player:
         raise RuntimeError(f"Multiple players with game ID '{game_id}' and name '{name}' found.")
 
 
+@cache
 def get_all_games() -> list[Game]:
-    global _games
-    if _games is None:
-        _games = _get_all(config.GAME_FILE_PATH, _parse_game)
-    return _games
+    return _get_all(config.GAME_FILE_PATH, _parse_game)
 
 
+@cache
 def get_game_by_id(game_id: int) -> Game:
     games = [g for g in get_all_games() if g.game_id == game_id]
     if len(games) == 1:
