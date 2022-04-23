@@ -32,10 +32,20 @@ def _get_investigation_table() -> pd.DataFrame:
     return df
 
 
-def investigate(pres: Role, target: Role, accuse: bool, context: GameContext) -> float:
+@cache
+def _get_matching_row(pres_role: Role, target_role: Role, accuse: bool) -> str:
     inv_table = _get_investigation_table()
-    matching_row = lambda x: x["president"] == str(pres) and x["target"] == str(target) and x["accuse"] == accuse
+    pres_role_str = str(pres_role)
+    target_role_str = str(target_role)
+    def matching_row(x: pd.Series) -> bool:
+        return (x["president"] == pres_role_str and
+            x["target"] == target_role_str and
+            x["accuse"] == accuse)
     inv_table = inv_table[inv_table.apply(matching_row, axis=1)]
-    prob_str = inv_table.iloc[0]["prob_str"]
+    return inv_table.iloc[0]["prob_str"]
+
+
+def investigate(pres: Role, target: Role, accuse: bool, context: GameContext) -> float:
+    prob_str = _get_matching_row(pres, target, accuse)
     param = _get_investigation_parameters(context)
     return utils.eval_probability(prob_str, param)
