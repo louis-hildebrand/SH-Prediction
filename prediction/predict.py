@@ -117,7 +117,7 @@ def _display_team_probabilities(game_probabilities: list[tuple[dict[str, Role], 
     print("-----------------------------")
     game_probabilities.sort(key=lambda x: x[1], reverse=True)
     data = []
-    format_float = "{:,.1%}".format
+    format_float = lambda x: f"{x:.1%}" if x >= 0.001 else f"{100*x:.1e}%"
     for (roles, prob) in game_probabilities:
         if format_float(prob) == format_float(0):
             break
@@ -162,7 +162,8 @@ def _display_individual_probabilities(game_probabilities: list[tuple[dict[str, R
             else:
                 ind_prob[2] += prob
         individual_probabilities[name] = ind_prob
-    pd.options.display.float_format = '{:,.1%}'.format
+    format_float = lambda x: f"{x:.1%}"
+    pd.set_option("display.float_format", format_float)
     df = pd.DataFrame(individual_probabilities, index=["Fas", "Hit", "Lib"])
     print(df)
     _plot_individual_probabilities(individual_probabilities)
