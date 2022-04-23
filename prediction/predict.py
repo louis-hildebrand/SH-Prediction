@@ -116,12 +116,16 @@ def _display_team_probabilities(game_probabilities: list[tuple[dict[str, Role], 
     print("Role assignment probabilities")
     print("-----------------------------")
     game_probabilities.sort(key=lambda x: x[1], reverse=True)
+    data = []
     for (roles, prob) in game_probabilities:
-        if prob < 0.0001:
+        if prob < 0.001:
             break
         hitler_name = _get_hitler_name(roles)
-        fascist_names = _get_fascist_names(roles)
-        print(f"Hitler: {hitler_name}, fascists: {fascist_names}: {100*prob:.2f}%")
+        fascist_names = ", ".join(_get_fascist_names(roles))
+        data.append([hitler_name, fascist_names, prob])
+    pd.options.display.float_format = '{:,.1%}'.format
+    df = pd.DataFrame(data, columns=["Hitler", "Fascist(s)", "Probability"])
+    print(df)
 
 
 def _plot_individual_probabilities(ind_prob: pd.DataFrame) -> None:
