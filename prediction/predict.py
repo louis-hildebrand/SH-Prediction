@@ -117,13 +117,18 @@ def _display_team_probabilities(game_probabilities: list[tuple[dict[str, Role], 
     print("-----------------------------")
     game_probabilities.sort(key=lambda x: x[1], reverse=True)
     data = []
+    format_float = "{:,.1%}".format
     for (roles, prob) in game_probabilities:
-        if prob < 0.001:
+        if format_float(prob) == format_float(0):
             break
         hitler_name = _get_hitler_name(roles)
         fascist_names = ", ".join(_get_fascist_names(roles))
         data.append([hitler_name, fascist_names, prob])
-    pd.options.display.float_format = '{:,.1%}'.format
+    pd.set_option(
+        "display.float_format", format_float,
+        "display.max_rows", None,
+        "display.max_columns", None,
+        "display.width", None)
     df = pd.DataFrame(data, columns=["Hitler", "Fascist(s)", "Probability"])
     print(df)
 
