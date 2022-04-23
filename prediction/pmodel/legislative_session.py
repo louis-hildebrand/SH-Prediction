@@ -125,10 +125,13 @@ def _prob_legislative_session_given_pga(ls: LegislativeSession, pres_get_actual:
     if context.fas_passed >= 3 and chan_role == Role.HIT:
         return 0
     # Get the relevant rows from the probability model table
+    pres_role_str = str(pres_role)
+    chan_role_str = str(chan_role)
+    outcome_str = str(ls.outcome)
     def matching_row(row: pd.Series) -> bool:
-        return (row.president == str(pres_role) and
-            row.chancellor == str(chan_role) and
-            row.outcome == str(ls.outcome) and
+        return (row.president == pres_role_str and
+            row.chancellor == chan_role_str and
+            row.outcome == outcome_str and
             row.pres_get_claim == ls.pres_get_claim and
             row.pres_give_claim == ls.pres_give_claim and
             row.chan_get_claim == ls.chan_get_claim and
