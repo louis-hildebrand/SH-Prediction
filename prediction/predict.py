@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import prediction.pmodel.pmodel as pmodel
 
+import cProfile, pstats
+
 
 # Chart colours
 rgb = lambda r, g, b: (r/255, g/255, b/255)
@@ -171,11 +173,15 @@ def main(args: Namespace) -> None:
     role_assignments = _get_all_role_assignments(player_names)
     game_probabilities = []
     num_assignments = len(role_assignments)
+    pr = cProfile.Profile()
+    pr.enable()
     for (i, ra) in enumerate(role_assignments, start=1):
         prob = pmodel.prob_game_given_roles(leg_sessions, pres_actions, ra)
         game_probabilities.append((ra, prob))
         _update_progress_bar(i, num_assignments)
-    total_probability = sum([x[1] for x in game_probabilities])
-    game_probabilities = [(ra, p/total_probability) for (ra, p) in game_probabilities]
-    _display_team_probabilities(game_probabilities)
-    _display_individual_probabilities(game_probabilities, player_names)
+    pr.disable()
+    # total_probability = sum([x[1] for x in game_probabilities])
+    # game_probabilities = [(ra, p/total_probability) for (ra, p) in game_probabilities]
+    # _display_team_probabilities(game_probabilities)
+    # _display_individual_probabilities(game_probabilities, player_names)
+    pstats.Stats(pr).sort_stats("tottime").print_stats("pmodel")
