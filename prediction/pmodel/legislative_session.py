@@ -115,6 +115,31 @@ def _get_leg_session_table() -> pd.DataFrame:
     return df
 
 
+@cache
+def _get_matching_rows(pres_role: Role, chan_role: Role, outcome: LegislativeOutcome, pres_get_claim: int, pres_give_claim: int, chan_get_claim: int, pres_get_actual: int) -> list[str]:
+    pres_role_str = str(pres_role)
+    chan_role_str = str(chan_role)
+    outcome_str = str(outcome)
+    def matching_row(row: pd.Series) -> bool:
+        # return (row.president == pres_role_str and
+        #     row.chancellor == chan_role_str and
+        #     row.outcome == outcome_str and
+        #     row.pres_get_claim == pres_get_claim and
+        #     row.pres_give_claim == pres_give_claim and
+        #     row.chan_get_claim == chan_get_claim and
+        #     row.pres_get_actual == pres_get_actual)
+        return (row.president == pres_role_str and
+            row.chancellor == chan_role_str and
+            row.outcome == outcome_str and
+            row.pres_get_claim == pres_get_claim and
+            row.pres_give_claim == pres_give_claim and
+            row.chan_get_claim == chan_get_claim and
+            row.pres_get_actual == pres_get_actual)
+    ls_table = _get_leg_session_table()
+    ls_table = ls_table[ls_table.apply(matching_row, axis=1)]
+    return ls_table["prob_str"].to_list()
+
+
 def _prob_legislative_session_given_pga(ls: LegislativeSession, pres_get_actual: int, role: dict[str, Role], context: GameContext) -> float:
     """
     Calculates the probability of the given legislative session given the specifed roles and number of Liberal policies received by the President.
@@ -125,26 +150,18 @@ def _prob_legislative_session_given_pga(ls: LegislativeSession, pres_get_actual:
     if context.fas_passed >= 3 and chan_role == Role.HIT:
         return 0
     # Get the relevant rows from the probability model table
-    pres_role_str = str(pres_role)
-    chan_role_str = str(chan_role)
-    outcome_str = str(ls.outcome)
-    def matching_row(row: pd.Series) -> bool:
-        return (row.president == pres_role_str and
-            row.chancellor == chan_role_str and
-            row.outcome == outcome_str and
-            row.pres_get_claim == ls.pres_get_claim and
-            row.pres_give_claim == ls.pres_give_claim and
-            row.chan_get_claim == ls.chan_get_claim and
-            row.pres_get_actual == pres_get_actual)
-    ls_table = _get_leg_session_table()
-    ls_table = ls_table[ls_table.apply(matching_row, axis=1)]
-    if len(ls_table) == 0:
+    prob_strs = _get_matching_rows(pres_role,
+        chan_role,
+        ls.outcome,
+        ls.pres_get_claim,
+        ls.pres_give_claim,
+        ls.chan_get_claim,
+        pres_get_actual)
+    if len(prob_strs) == 0:
         return 0
     # Calculate the probabilities for this round
     param = _get_leg_session_parameters(context)
-    ls_table = utils.eval_table(ls_table, param)
-    prob = sum(ls_table["probability"])
-    return prob
+    return sum([utils.eval_probability(s, param) for s in prob_strs])
 
 
 def _new_draw_pile_pmf(x: int, prob_ls: float, old_draw_pile: dict[int, float], old_size: int, prob_ls_given_pga: dict[int, float]) -> float:
