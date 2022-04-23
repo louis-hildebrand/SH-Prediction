@@ -14,6 +14,7 @@ def _get_peek_table() -> pd.DataFrame:
     return pd.read_csv(PEEK_FILE)
 
 
+@cache
 def _prob_peek_given_pga(pres: Role, pres_get_actual: int, pres_get_claim: int) -> float:
     # Load the model and find the relevant rows
     peek_table = _get_peek_table()
