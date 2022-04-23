@@ -17,7 +17,7 @@ LIB_COLOUR = rgb(136, 204, 252)  # "skyblue1"
 
 # Progress bar
 TOT_BARS = 60
-FILL_SYMBOL = "\u25A0"
+FILL_SYMBOL = "#"
 EMPTY_SYMBOL = "-"
 
 
