@@ -15,7 +15,7 @@ def _try_add_private_subparsers(subparsers: _SubParsersAction) -> None:
         from data.data.manage import add_subparsers
         add_subparsers(subparsers)
     except ModuleNotFoundError:
-        os.makedirs(config.DATA_TABLE_FOLDER)
+        os.makedirs(config.DATA_TABLE_FOLDER, exist_ok=True)
 
 
 def main():
