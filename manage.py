@@ -1,10 +1,11 @@
-from data import sync
-from data.data.archive import sync as sync_archive, migrate as migrate_archive
-from data.data.randomize_names import make_mapping, apply_mapping
-from prediction import predict
-
 import argparse
 import config
+import data.sync as sync
+import data.data.archive.sync as sync_archive
+import data.data.archive.migrate as migrate_archive
+import data.data.randomize_names.make_mapping as make_mapping
+import data.data.randomize_names.apply_mapping as apply_mapping
+import prediction.predict as predict
 
 
 def _sync_archive(args) -> None:
