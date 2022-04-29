@@ -3,18 +3,19 @@ from argparse import _SubParsersAction
 import argparse
 import config
 import data.sync as sync
+import os
 import prediction.predict as predict
 
 
 def _try_add_private_subparsers(subparsers: _SubParsersAction) -> None:
     """
-    Adds subparsers for the private subcommands if the data/data submodule is present, otherwise does nothing.
+    Adds subparsers for the private subcommands if the data/data submodule is present, otherwise creates a data/data/table folder.
     """
     try:
         from data.data.manage import add_subparsers
         add_subparsers(subparsers)
     except ModuleNotFoundError:
-        pass
+        os.makedirs(config.DATA_TABLE_FOLDER)
 
 
 def main():

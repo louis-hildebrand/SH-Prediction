@@ -12,7 +12,8 @@ SPREADSHEET_NUM_COLS = len(SPREADSHEET_HEADER)
 SPREADSHEET_MAX_ROWS = 10000
 
 # Data file locations
-GAME_FILE_PATH = "data/data/tables/game.csv"
-PLAYER_FILE_PATH = "data/data/tables/player.csv"
-LEG_SESSION_FILE_PATH = "data/data/tables/legislative_session.csv"
-PRES_ACTION_FILE_PATH = "data/data/tables/president_action.csv"
+DATA_TABLE_FOLDER = "data/data/tables"
+GAME_FILE_PATH = f"{DATA_TABLE_FOLDER}/game.csv"
+PLAYER_FILE_PATH = f"{DATA_TABLE_FOLDER}/player.csv"
+LEG_SESSION_FILE_PATH = f"{DATA_TABLE_FOLDER}/legislative_session.csv"
+PRES_ACTION_FILE_PATH = f"{DATA_TABLE_FOLDER}/president_action.csv"
