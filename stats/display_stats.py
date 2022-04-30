@@ -12,4 +12,5 @@ def main(args: Namespace) -> None:
         "display.max_rows", None,
         "display.max_columns", None,
         "display.width", None)
+    df.fillna("",inplace=True)
     print(df.to_string(index=False))
