@@ -1,0 +1,54 @@
+\documentclass[fleqn, 12pt, letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[letterpaper, margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+% Paragraph indentation and spacing
+\usepackage[parfill]{parskip}
+% Ceiling and floor
+\usepackage{mathtools}
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+\DeclarePairedDelimiter{\floor}{\lfloor}{\rfloor}
+
+\title{Secret Hitler Statistics}
+\author{Louis Hildebrand}
+\date{2022/05/01}
+
+\begin{document}
+\maketitle
+
+\section{p-values}
+Let $X_i$ be the number of $i$-player games in which they have a given role (say, Liberal) and let $X$ be the total number of games in which they have that role. That is,
+\begin{equation*}
+	X = X_5 + X_6 + X_7 + X_8 + X_9 + X_{10}
+\end{equation*}
+
+We want to find the p-value for their observed affiliations. That is, given some observed number of games $x$ and an expected number of games $\mu$ with a given role, we want to calculate $p = P(|X - \mu| \geq |x - \mu|)$.
+
+Begin by calculating the probability of each number of games $P(X = x)$. Let $n_i$ be the number of $i$-player games that the person participated in and let $n = \sum_{i=5}^{10} n_i$. Then
+\begin{align*}
+	P(X = x)
+		&= \sum_{x_5=0}^{n_5} \dots \sum_{x_9=0}^{n_9} P(X_5=x_5 \cap \dots \cap X_9=x_9 \cap X_{10}=x-x_5-x_6-\dots-x_9) \\
+		&= \sum_{x_5=0}^{n_5} \dots \sum_{x_9=0}^{n_9} P(X_5=x_5) \dots P(X_9=x_9) P(X_{10}=x-x_5-x_6-\dots-x_9)
+\end{align*}
+where
+\begin{equation*}
+	P(X_i=x_i) = \binom{n_i}{x_i} p_i^{x_i} (1 - p_i)^{n_i-x_i}
+\end{equation*}
+and $p_i$ is the probability of being assigned the role in question in an $i$-player game. If there are $k$ players with that role, then $p_i = \frac{k}{i}$.
+
+Once all the probabilities have been calculated, the expected value can be calculated.
+\begin{align*}
+	\mu
+		&= E[X] \\
+		&= \sum_{x=0}^n x P(X=x)
+\end{align*}
+And the p-value can be calculated using the expected value and the probabilities.
+\begin{align*}
+	p
+		&= P(|X - \mu| \geq |x - \mu|) \\
+		&= P(X \geq \mu + |x - \mu|) + P(X \leq \mu - |x - \mu|) \\
+		&= \sum_{k=\ceil{\mu + |x - \mu|}}^n P(X=k) + \sum_{k=0}^{\floor{\mu - |x - \mu|}} P(X=k)
+\end{align*}
+
+\end{document}
