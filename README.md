@@ -26,6 +26,7 @@ python mange.py predict [-h] table
 Displays statistics. The `table` argument selects the data to display. Valid choices are:
 - `player-win-rates`
 - `team-win-rates`
+- `p-values`
 
 ## Example
 A set of example games is available in "data/example.xlsx." An example output is also available in "data/example.png." It was generated from game 48, on which the algorithm performed particularly well. In that game, "Yuonne" was Hitler and "Carmina" was Fascist.
