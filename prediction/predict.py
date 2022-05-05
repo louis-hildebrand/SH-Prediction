@@ -1,9 +1,10 @@
 from argparse import Namespace
 from data.models import Game, LegislativeSession, Player, PresidentAction, LegislativeOutcome, Role
 from prediction.pmodel.game_context import GameContext
+from utils.progress_bar import ProgressBar
+from utils.utils import num_players_with_role
 
 import data.repository as re
-import math
 import matplotlib.pyplot as plt
 import pandas as pd
 import prediction.pmodel.pmodel as pmodel
@@ -14,11 +15,6 @@ rgb = lambda r, g, b: (r/255, g/255, b/255)
 FAS_COLOUR = rgb(255, 124, 36)  # "chocolate1"
 HIT_COLOUR = rgb(208, 4, 4)  # "red3"
 LIB_COLOUR = rgb(136, 204, 252)  # "skyblue1"
-
-# Progress bar
-TOT_BARS = 60
-FILL_SYMBOL = "#"
-EMPTY_SYMBOL = "-"
 
 
 def _max_round(leg_sessions: list[LegislativeSession]) -> int:
@@ -88,19 +84,12 @@ def _get_all_role_assignments(player_names: list[str]) -> list[dict[str, Role]]:
     role_assignments = []
     for name in player_names:
         given = {name: Role.HIT}
-        num_fas_players = GameContext.count_fas_players(len(player_names))
+        num_fas_players = num_players_with_role(Role.FAS, len(player_names))
         other_players = [p for p in player_names if p != name]
         role_assignments += _role_assignments_with_givens(other_players, given, num_fas_players)
     for ra in role_assignments:
         _fill_roles(ra, player_names)
     return role_assignments
-
-
-def _update_progress_bar(done: int, total: int) -> None:
-    filled_bars = math.floor(TOT_BARS*done/total)
-    empty_bars = TOT_BARS - filled_bars
-    msg = f"[{FILL_SYMBOL*filled_bars}{EMPTY_SYMBOL*empty_bars}] {done}/{total} ({100*done/total:.0f}%)"
-    print(msg, end="\r")
 
 
 def _get_hitler_name(role_assignment: dict[str, Role]) -> str:
@@ -177,10 +166,11 @@ def main(args: Namespace) -> None:
     role_assignments = _get_all_role_assignments(player_names)
     game_probabilities = []
     num_assignments = len(role_assignments)
+    progress_bar = ProgressBar(num_assignments)
     for (i, ra) in enumerate(role_assignments, start=1):
         prob = pmodel.prob_game_given_roles(leg_sessions, pres_actions, ra)
         game_probabilities.append((ra, prob))
-        _update_progress_bar(i, num_assignments)
+        progress_bar.update(i)
     total_probability = sum([x[1] for x in game_probabilities])
     game_probabilities = [(ra, p/total_probability) for (ra, p) in game_probabilities]
     _display_team_probabilities(game_probabilities)

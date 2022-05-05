@@ -1,10 +1,14 @@
+from data.models import Role
+from utils.utils import num_players_with_role
+
+
 class GameContext:
     TOTAL_POLICIES = 17
 
     def __init__(self, num_players: int):
         self.num_players = num_players
-        self.fas_players = GameContext.count_fas_players(num_players)
-        self.lib_players = self.num_players - 1 - self.fas_players
+        self.fas_players = num_players_with_role(Role.FAS, num_players)
+        self.lib_players = num_players_with_role(Role.LIB, num_players)
         self.fas_passed = 0
         self.lib_passed = 0
         self.draw_pile_size = GameContext.TOTAL_POLICIES
@@ -18,20 +22,6 @@ class GameContext:
             5: 0.0,
             6: 1.0
         }
-    
-    @staticmethod
-    def count_fas_players(num_players: int) -> int:
-        """
-        Returns the number of vanilla fascists in a game with `num_players` players.
-        """
-        if num_players in [5, 6]:
-            return 1
-        elif num_players in [7, 8]:
-            return 2
-        elif num_players in [9, 10]:
-            return 3
-        else:
-            raise ValueError(f"Invalid number of players '{num_players}'.")
     
     def hitler_knows_fas(self) -> bool:
         return self.num_players < 7
