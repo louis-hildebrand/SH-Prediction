@@ -170,7 +170,8 @@ def _player_win_rates() -> pd.DataFrame:
         player_history = [(p.role, p.game_id) for p in players if p.name == name]
         history = []
         for ph in player_history:
-            game = repo.get_game_by_id(ph[1])
+            game_id = ph[1]
+            game = unique([g for g in repo.get_all_games() if g.game_id == game_id])
             history.append((ph[0], _player_won(ph[0], game.winning_team)))
         # Analyse data
         num_games = len(history)

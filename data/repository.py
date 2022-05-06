@@ -57,13 +57,13 @@ def _parse_leg_session(row: list[str]) -> LegislativeSession:
     elif row[11] == "False":
         veto_attempt = False
     else:
-        print("WARNING: Invalid value for legislative_session.veto_attempt: '{row[11]}'.")
+        print(f"WARNING: Invalid value for legislative_session.veto_attempt: '{row[11]}'.")
     if row[12] == "True":
         last_round = True
     elif row[12] == "False":
         last_round = False
     else:
-        print("WARNING: Invalid value for legislative_session.veto_attempt: '{row[11]}'.")
+        print(f"WARNING: Invalid value for legislative_session.veto_attempt: '{row[11]}'.")
     return LegislativeSession(game_id, round_num, pres_name, chan_name, outcome, top_deck, pres_get_claim, pres_give_claim, chan_get_claim, pres_get_actual, chan_get_actual, veto_attempt, last_round)
 
 
@@ -116,30 +116,9 @@ def get_all_players() -> list[Player]:
     return _get_all(config.PLAYER_FILE_PATH, _parse_player)
 
 
-def get_player_by_game_and_name(game_id: int, name: str) -> Player:
-    players = [p for p in get_all_players() if p.game_id == game_id and p.name == name]
-    if len(players) == 1:
-        return players[0]
-    elif len(players) == 0:
-        raise ValueError(f"No player with game ID '{game_id}' and name '{name}' found.")
-    else:
-        raise RuntimeError(f"Multiple players with game ID '{game_id}' and name '{name}' found.")
-
-
 @cache
 def get_all_games() -> list[Game]:
     return _get_all(config.GAME_FILE_PATH, _parse_game)
-
-
-@cache
-def get_game_by_id(game_id: int) -> Game:
-    games = [g for g in get_all_games() if g.game_id == game_id]
-    if len(games) == 1:
-        return games[0]
-    elif len(games) == 0:
-        raise ValueError(f"No game with ID '{game_id}' found.")
-    else:
-        raise RuntimeError(f"Multiple games with ID '{game_id}' found.")
 
 
 # ------------------------------------------------------------------------------
