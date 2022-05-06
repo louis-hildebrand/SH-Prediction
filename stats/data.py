@@ -198,14 +198,23 @@ def _player_win_rates() -> pd.DataFrame:
 
 def _team_win_rates() -> pd.DataFrame:
     data = []
+    total_fas_wins = 0
+    total_lib_wins = 0
     for i in range(5, 11):
         games = _get_games_by_num_players(i)
         num_games = len(games)
         fas_wins = len([g for g in games if g.winning_team == Party.FAS])
+        total_fas_wins += fas_wins
         fas_win_rate = None if num_games == 0 else fas_wins / num_games
         lib_wins = num_games - fas_wins
+        total_lib_wins += lib_wins
         lib_win_rate = None if num_games == 0 else 1 - fas_win_rate
-        data.append([i, len(games), fas_wins, fas_win_rate, lib_wins, lib_win_rate])
+        data.append([i, num_games, fas_wins, fas_win_rate, lib_wins, lib_win_rate])
+    # Find totals
+    total_num_games = total_fas_wins + total_lib_wins
+    total_fas_win_rate = total_fas_wins / total_num_games
+    total_lib_win_rate = total_lib_wins / total_num_games
+    data.append(["Total", total_num_games, total_fas_wins, total_fas_win_rate, total_lib_wins, total_lib_win_rate])
     headers = ["#players", "#games", "Fas wins", "Fas win rate", "Lib wins", "Lib win rate"]
     return pd.DataFrame(data, columns=headers)
 
