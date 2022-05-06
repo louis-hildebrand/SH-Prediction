@@ -1,5 +1,5 @@
 from data.models import Role
-from utils.utils import num_players_with_role
+from utils.game import num_players_with_role
 
 
 class GameContext:

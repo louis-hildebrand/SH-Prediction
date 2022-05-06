@@ -1,6 +1,7 @@
-from data.models import Game, Party, Role
+from data.models import Game, Party, PresidentActionType, Role
+from utils.game import num_players_with_role
 from utils.progress_bar import ProgressBar
-from utils.utils import num_players_with_role
+from utils.utils import unique
 
 import itertools
 import math
@@ -91,6 +92,49 @@ def _p_value(player_name: str, role: Role) -> float:
 # ------------------------------------------------------------------------------
 # Data sources
 # ------------------------------------------------------------------------------
+def _investigations() -> pd.DataFrame:
+    fas_target_defend = [0, 0, 0]
+    fas_target_accuse = [0, 0, 0]
+    hit_target_defend = [0, 0, 0]
+    hit_target_accuse = [0, 0, 0]
+    lib_target_defend = [0, 0, 0]
+    lib_target_accuse = [0, 0, 0]
+    investigations = [x for x in repo.get_all_pres_actions() if x.action == PresidentActionType.INVESTIGATE]
+    for inv in investigations:
+        leg_session = unique([ls for ls in repo.get_all_leg_sessions() if ls.game_id == inv.game_id and ls.round_num == inv.round_num])
+        pres_name = leg_session.pres_name
+        president = unique([p for p in repo.get_all_players() if p.game_id == inv.game_id and p.name == pres_name])
+        pres_role = president.role
+        target = unique([p for p in repo.get_all_players() if p.game_id == inv.game_id and p.name == inv.target_name])
+        target_role = target.role
+        col = 0 if pres_role == Role.FAS else 1 if pres_role == Role.HIT else 2
+        if target_role == Role.FAS and not inv.accuse:
+            fas_target_defend[col] += 1
+        elif target_role == Role.FAS and inv.accuse:
+            fas_target_accuse[col] += 1
+        elif target_role == Role.HIT and not inv.accuse:
+            hit_target_defend[col] += 1
+        elif target_role == Role.HIT and inv.accuse:
+            hit_target_accuse[col] += 1
+        elif target_role == Role.LIB and not inv.accuse:
+            lib_target_defend[col] += 1
+        elif target_role == Role.LIB and inv.accuse:
+            lib_target_accuse[col] += 1
+        # TEST
+        if target_role == Role.HIT and pres_role == Role.HIT:
+            print(f"Two Hitlers in game {inv.game_id}, round {inv.round_num}")
+    data = [
+        ["Fas", "Defend"] + fas_target_defend,
+        ["Fas", "Accuse"] + fas_target_accuse,
+        ["Hit", "Defend"] + hit_target_defend,
+        ["Hit", "Accuse"] + hit_target_accuse,
+        ["Lib", "Defend"] + lib_target_defend,
+        ["Lib", "Accuse"] + lib_target_accuse,
+    ]
+    headers = ["Target", "Outcome", "Fas president", "Hit president", "Lib president"]
+    return pd.DataFrame(data, columns=headers)
+
+
 def _p_values() -> pd.DataFrame:
     player_names = {p.name for p in repo.get_all_players()}
     data = []
@@ -169,6 +213,7 @@ def _team_win_rates() -> pd.DataFrame:
 # Interface
 # ------------------------------------------------------------------------------
 _data_source = {
+    "investigations": _investigations,
     "p-values": _p_values,
     "player-win-rates": _player_win_rates,
     "team-win-rates": _team_win_rates,

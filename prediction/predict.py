@@ -2,7 +2,7 @@ from argparse import Namespace
 from data.models import Game, LegislativeSession, Player, PresidentAction, LegislativeOutcome, Role
 from prediction.pmodel.game_context import GameContext
 from utils.progress_bar import ProgressBar
-from utils.utils import num_players_with_role
+from utils.game import num_players_with_role
 
 import data.repository as re
 import matplotlib.pyplot as plt
