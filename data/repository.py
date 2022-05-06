@@ -32,66 +32,6 @@ def _get_all(file: str, parse: Callable) -> list:
     return results
 
 
-def _parse_player(row: list[str]) -> Player:
-    game_id = int(row[0])
-    name = row[1]
-    role = Role(row[2])
-    return Player(game_id, name, role)
-
-
-def _parse_leg_session(row: list[str]) -> LegislativeSession:
-    game_id = int(row[0])
-    round_num = int(row[1])
-    pres_name = row[2]
-    chan_name = row[3]
-    outcome = LegislativeOutcome(row[4])
-    top_deck = None if not row[5] else Party(row[5])
-    pres_get_claim = None if not row[6] else int(row[6])
-    pres_give_claim = None if not row[7] else int(row[7])
-    chan_get_claim = None if not row[8] else int(row[8])
-    pres_get_actual = None if not row[9] else int(row[9])
-    chan_get_actual = None if not row[10] else int(row[10])
-    veto_attempt = bool(row[11])
-    if row[11] == "True":
-        veto_attempt = True
-    elif row[11] == "False":
-        veto_attempt = False
-    else:
-        print(f"WARNING: Invalid value for legislative_session.veto_attempt: '{row[11]}'.")
-    if row[12] == "True":
-        last_round = True
-    elif row[12] == "False":
-        last_round = False
-    else:
-        print(f"WARNING: Invalid value for legislative_session.veto_attempt: '{row[11]}'.")
-    return LegislativeSession(game_id, round_num, pres_name, chan_name, outcome, top_deck, pres_get_claim, pres_give_claim, chan_get_claim, pres_get_actual, chan_get_actual, veto_attempt, last_round)
-
-
-def _parse_pres_action(row: list[str]) -> PresidentAction:
-    game_id = int(row[0])
-    round_num = int(row[1])
-    action = PresidentActionType(row[2])
-    target_name = None if not row[3] else row[3]
-    num_lib = None if not row[4] else int(row[4])
-    if row[5] == "True":
-        accuse = True
-    elif row[5] == "False":
-        accuse = False
-    elif row[5] == "":
-        accuse = None
-    else:
-        print(f"WARNING: Invalid value for president_action.accuse: '{row[5]}'.")
-    return PresidentAction(game_id, round_num, action, target_name, num_lib, accuse)
-
-
-def _parse_game(row: list[str]) -> Game:
-    game_id = int(row[0])
-    date = datetime.strptime(row[1], "%Y-%m-%d")
-    winning_team = Party(row[2])
-    win_reason = WinReason(row[3])
-    return Game(game_id, date, winning_team, win_reason)
-
-
 def _insert(row: list, file: str) -> None:
     with open(file, "a", newline="") as f:
         writer = csv.writer(f)
@@ -103,22 +43,74 @@ def _insert(row: list, file: str) -> None:
 # ------------------------------------------------------------------------------
 @cache
 def get_all_pres_actions() -> list[PresidentAction]:
-    return _get_all(config.PRES_ACTION_FILE_PATH, _parse_pres_action)
+    def parse_pres_action(row: list[str]) -> PresidentAction:
+        game_id = int(row[0])
+        round_num = int(row[1])
+        action = PresidentActionType(row[2])
+        target_name = None if not row[3] else row[3]
+        num_lib = None if not row[4] else int(row[4])
+        if row[5] == "True":
+            accuse = True
+        elif row[5] == "False":
+            accuse = False
+        elif row[5] == "":
+            accuse = None
+        else:
+            print(f"WARNING: Invalid value for president_action.accuse: '{row[5]}'.")
+        return PresidentAction(game_id, round_num, action, target_name, num_lib, accuse)
+    return _get_all(config.PRES_ACTION_FILE_PATH, parse_pres_action)
 
 
 @cache
 def get_all_leg_sessions() -> list[LegislativeSession]:
-    return _get_all(config.LEG_SESSION_FILE_PATH, _parse_leg_session)
+    def parse_leg_session(row: list[str]) -> LegislativeSession:
+        game_id = int(row[0])
+        round_num = int(row[1])
+        pres_name = row[2]
+        chan_name = row[3]
+        outcome = LegislativeOutcome(row[4])
+        top_deck = None if not row[5] else Party(row[5])
+        pres_get_claim = None if not row[6] else int(row[6])
+        pres_give_claim = None if not row[7] else int(row[7])
+        chan_get_claim = None if not row[8] else int(row[8])
+        pres_get_actual = None if not row[9] else int(row[9])
+        chan_get_actual = None if not row[10] else int(row[10])
+        veto_attempt = bool(row[11])
+        if row[11] == "True":
+            veto_attempt = True
+        elif row[11] == "False":
+            veto_attempt = False
+        else:
+            print(f"WARNING: Invalid value for legislative_session.veto_attempt: '{row[11]}'.")
+        if row[12] == "True":
+            last_round = True
+        elif row[12] == "False":
+            last_round = False
+        else:
+            print(f"WARNING: Invalid value for legislative_session.veto_attempt: '{row[11]}'.")
+        return LegislativeSession(game_id, round_num, pres_name, chan_name, outcome, top_deck, pres_get_claim, pres_give_claim, chan_get_claim, pres_get_actual, chan_get_actual, veto_attempt, last_round)
+    return _get_all(config.LEG_SESSION_FILE_PATH, parse_leg_session)
 
 
 @cache
 def get_all_players() -> list[Player]:
-    return _get_all(config.PLAYER_FILE_PATH, _parse_player)
+    def parse_player(row: list[str]) -> Player:
+        game_id = int(row[0])
+        name = row[1]
+        role = Role(row[2])
+        return Player(game_id, name, role)
+    return _get_all(config.PLAYER_FILE_PATH, parse_player)
 
 
 @cache
 def get_all_games() -> list[Game]:
-    return _get_all(config.GAME_FILE_PATH, _parse_game)
+    def parse_game(row: list[str]) -> Game:
+        game_id = int(row[0])
+        date = datetime.strptime(row[1], "%Y-%m-%d")
+        winning_team = Party(row[2])
+        win_reason = WinReason(row[3])
+        return Game(game_id, date, winning_team, win_reason)
+    return _get_all(config.GAME_FILE_PATH, parse_game)
 
 
 # ------------------------------------------------------------------------------
