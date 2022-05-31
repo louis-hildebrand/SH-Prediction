@@ -83,8 +83,10 @@ def _parse_data(data: list[list]) -> tuple[list[Game], list[Player], list[Legisl
                 pres_get_claim = _get_value(row, "pres_get")
                 pres_give_claim = _get_value(row, "pres_give")
                 chan_get_claim = _get_value(row, "chan_get")
-                veto_attempt = _get_value(row, "veto_attempt")
-                last_round = _get_value(row, "last_round")
+                veto_attempt_raw = _get_value(row, "veto_attempt")
+                veto_attempt = False if not veto_attempt_raw else veto_attempt_raw
+                last_round_raw = _get_value(row, "last_round")
+                last_round = False if not last_round_raw else last_round_raw
                 pres_get_actual = _get_value(row, "pres_get_actual")
                 chan_get_actual = _get_value(row, "chan_get_actual")
                 leg_sessions.append(LegislativeSession(game_id, round_num, pres_name, chan_name, outcome, top_deck, pres_get_claim, pres_give_claim, chan_get_claim, pres_get_actual, chan_get_actual, veto_attempt, last_round))
