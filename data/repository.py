@@ -56,7 +56,7 @@ def get_all_pres_actions() -> list[PresidentAction]:
         elif row[5] == "":
             accuse = None
         else:
-            print(f"WARNING: Invalid value for president_action.accuse: '{row[5]}'.")
+            raise RuntimeError(f"Invalid value for PresidentAction.accuse: '{row[5]}'.")
         return PresidentAction(game_id, round_num, action, target_name, num_lib, accuse)
     return _get_all(config.PRES_ACTION_FILE_PATH, parse_pres_action)
 
@@ -81,13 +81,13 @@ def get_all_leg_sessions() -> list[LegislativeSession]:
         elif row[11] == "False":
             veto_attempt = False
         else:
-            print(f"WARNING: Invalid value for legislative_session.veto_attempt: '{row[11]}'.")
+            raise RuntimeError(f"WARNING: Invalid value for legislative_session.veto_attempt: '{row[11]}'.")
         if row[12] == "True":
             last_round = True
         elif row[12] == "False":
             last_round = False
         else:
-            print(f"WARNING: Invalid value for legislative_session.veto_attempt: '{row[11]}'.")
+            raise RuntimeError(f"WARNING: Invalid value for legislative_session.last_round: '{row[11]}'.")
         return LegislativeSession(game_id, round_num, pres_name, chan_name, outcome, top_deck, pres_get_claim, pres_give_claim, chan_get_claim, pres_get_actual, chan_get_actual, veto_attempt, last_round)
     return _get_all(config.LEG_SESSION_FILE_PATH, parse_leg_session)
 
