@@ -81,13 +81,13 @@ def get_all_leg_sessions() -> list[LegislativeSession]:
         elif row[11] == "False":
             veto_attempt = False
         else:
-            raise RuntimeError(f"WARNING: Invalid value for legislative_session.veto_attempt: '{row[11]}'.")
+            raise RuntimeError(f"Invalid value for legislative_session.veto_attempt: '{row[11]}'.")
         if row[12] == "True":
             last_round = True
         elif row[12] == "False":
             last_round = False
         else:
-            raise RuntimeError(f"WARNING: Invalid value for legislative_session.last_round: '{row[11]}'.")
+            raise RuntimeError(f"Invalid value for legislative_session.last_round: '{row[12]}'.")
         return LegislativeSession(game_id, round_num, pres_name, chan_name, outcome, top_deck, pres_get_claim, pres_give_claim, chan_get_claim, pres_get_actual, chan_get_actual, veto_attempt, last_round)
     return _get_all(config.LEG_SESSION_FILE_PATH, parse_leg_session)
 
