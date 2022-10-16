@@ -1,5 +1,7 @@
 # Secret Hitler Prediction Algorithm
 
+See `README.pdf` for a mathematical explanation of the prediction algorithm.
+
 ## Model
 ### Variables
 The probabilities in the model tables depend on some variables. These are named according to the format `[FILE]_[SCENARIO]_[DESCRIPTION]`.
