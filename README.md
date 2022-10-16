@@ -21,7 +21,7 @@ Predicts player roles. The game ID can be provided using the `--game` argument a
 
 ### stats
 ```sh
-python mange.py predict [-h] table
+python mange.py stats [-h] table
 ```
 Displays statistics. The `table` argument selects the data to display. Valid choices are:
 - `player-win-rates`
