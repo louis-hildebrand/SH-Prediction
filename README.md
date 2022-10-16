@@ -3,7 +3,7 @@ Command-line app to predict players' roles in the social deduction game "Secret 
 
 The app can be run using
 ```sh
-manage.py [-h] <subcommand> ...
+python manage.py [-h] <subcommand> ...
 ```
 
 ## Subcommands
